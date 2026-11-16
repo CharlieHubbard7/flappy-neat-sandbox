@@ -20,6 +20,13 @@ class FlappyGameTests(unittest.TestCase):
         game.step(1 / 120, flap=True)
         self.assertLess(game.bird_vy, 0)
 
+    def test_first_pipe_is_centered(self) -> None:
+        game = FlappyGame()
+        for _ in range(40):
+            game.step(1 / 60)
+
+        self.assertEqual(game.pipes[0].gap_y, game.config.height / 2)
+
 
 if __name__ == "__main__":
     unittest.main()

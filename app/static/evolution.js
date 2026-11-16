@@ -9,8 +9,10 @@ const humanControls = document.querySelector(".human-controls");
 const evolutionControls = document.querySelector(".evolution-controls");
 const score = document.querySelector("#score");
 const best = document.querySelector("#best");
+const scoreName = document.querySelector("#score-name");
+const bestName = document.querySelector("#best-name");
 const toggle = document.querySelector("#toggle");
-const telemetry = Object.fromEntries(["generation", "alive", "species", "fitness"].map((name) => [name, document.querySelector(`#${name}`)]));
+const telemetry = Object.fromEntries(["generation", "alive", "species", "fitness", "first-gate"].map((name) => [name, document.querySelector(`#${name}`)]));
 const mutation = document.querySelector("#mutation-note");
 let socket;
 let paused = false;
@@ -34,6 +36,8 @@ function setMode(mode) {
   document.querySelectorAll(".mode-button").forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
   humanControls.hidden = mode !== "human";
   evolutionControls.hidden = mode !== "evolution";
+  scoreName.textContent = mode === "human" ? "Score" : "Generation";
+  bestName.textContent = mode === "human" ? "Best" : "Fitness";
   window.dispatchEvent(new CustomEvent("sandboxmode", { detail: mode }));
   if (mode === "evolution") {
     status.textContent = "Training 50 birds on the same course";
@@ -63,6 +67,7 @@ function render(state) {
   telemetry.alive.textContent = `${state.alive} / ${state.population}`;
   telemetry.species.textContent = state.species;
   telemetry.fitness.textContent = state.bestFitness.toFixed(2);
+  telemetry["first-gate"].textContent = `${state.lastFirstGate || state.passedFirstGate} / ${state.population}`;
   const addedNodes = state.graph.newNodes.length;
   const addedEdges = state.graph.newConnections.length;
   mutation.textContent = addedNodes || addedEdges ? `new: ${addedNodes} node${addedNodes === 1 ? "" : "s"}, ${addedEdges} edge${addedEdges === 1 ? "" : "s"}` : "stable topology";
@@ -71,22 +76,29 @@ function render(state) {
 }
 
 function drawWorld(pipes) {
-  context.fillStyle = "#0b252b";
+  const sky = context.createLinearGradient(0, 0, 0, canvas.height);
+  sky.addColorStop(0, "#113a48"); sky.addColorStop(0.62, "#0f6670"); sky.addColorStop(1, "#143d42");
+  context.fillStyle = sky;
   context.fillRect(0, 0, canvas.width, canvas.height);
-  context.strokeStyle = "#236368";
-  context.globalAlpha = 0.2;
-  for (let x = 0; x < canvas.width; x += 40) { context.beginPath(); context.moveTo(x, 0); context.lineTo(x, canvas.height); context.stroke(); }
+  context.fillStyle = "#f6d999"; context.globalAlpha = 0.18; context.beginPath(); context.arc(372, 104, 56, 0, Math.PI * 2); context.fill();
+  context.fillStyle = "#c6f1da";
+  for (const [x, y, radius] of [[42, 94, 20], [84, 126, 34], [430, 240, 25], [388, 270, 37]]) { context.globalAlpha = 0.07; context.beginPath(); context.arc(x, y, radius, 0, Math.PI * 2); context.fill(); }
+  context.fillStyle = "#0b2d33"; context.globalAlpha = 0.45; context.fillRect(0, canvas.height - 54, canvas.width, 54);
   context.globalAlpha = 1;
   pipes.forEach((pipe) => {
     const top = pipe.gapY - 82.5; const bottom = pipe.gapY + 82.5;
-    context.fillStyle = "#1d8278"; context.fillRect(pipe.x, 0, 76, top); context.fillRect(pipe.x, bottom, 76, canvas.height - bottom);
-    context.fillStyle = "#56e4c8"; context.fillRect(pipe.x - 4, top - 12, 84, 12); context.fillRect(pipe.x - 4, bottom, 84, 12);
+    const pipePaint = context.createLinearGradient(pipe.x, 0, pipe.x + 76, 0);
+    pipePaint.addColorStop(0, "#195d58"); pipePaint.addColorStop(0.5, "#35ad92"); pipePaint.addColorStop(1, "#0f4d4b");
+    context.fillStyle = pipePaint; context.fillRect(pipe.x, 0, 76, top); context.fillRect(pipe.x, bottom, 76, canvas.height - bottom);
+    context.fillStyle = "#8bf1cb"; context.globalAlpha = 0.72; context.fillRect(pipe.x + 10, 0, 5, top); context.fillRect(pipe.x + 10, bottom, 5, canvas.height - bottom); context.globalAlpha = 1;
+    context.fillStyle = "#247b6d"; context.roundRect(pipe.x - 5, top - 14, 86, 15, 5); context.fill(); context.roundRect(pipe.x - 5, bottom, 86, 15, 5); context.fill();
   });
 }
 
 function drawBird(x, y, vy, color, alpha) {
   context.save(); context.globalAlpha = alpha; context.translate(x, y); context.rotate(Math.max(-0.5, Math.min(0.7, vy / 700)));
   context.fillStyle = color; context.beginPath(); context.arc(0, 0, 14, 0, Math.PI * 2); context.fill();
+  context.fillStyle = "#e9ac50"; context.beginPath(); context.ellipse(-6, 4, 8, 5, 0.4, 0, Math.PI * 2); context.fill();
   context.fillStyle = "#172024"; context.beginPath(); context.arc(5, -4, 2.4, 0, Math.PI * 2); context.fill(); context.restore();
 }
 

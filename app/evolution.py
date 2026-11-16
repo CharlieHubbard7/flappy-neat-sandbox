@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import pickle
+import random
 
 import neat
 import numpy as np
@@ -30,6 +31,7 @@ class EvolutionRunner:
 
     def __init__(self, seed: int = 19) -> None:
         self.seed = seed
+        random.seed(seed)
         self.config = neat.Config(
             neat.DefaultGenome,
             neat.DefaultReproduction,
@@ -68,7 +70,9 @@ class EvolutionRunner:
 
     def _start_generation(self) -> None:
         self._elapsed = 0.0
-        course_seed = self.seed + self.generation * 7919
+        # Every generation sees the same course. That makes the pass-rate chart
+        # an honest measure of learned policy rather than changing test luck.
+        course_seed = self.seed
         self.agents = []
         for genome_id, genome in self.population.population.items():
             genome.fitness = 0.0
@@ -88,11 +92,18 @@ class EvolutionRunner:
         agent.game.step(1 / 60, flap=agent.output > 0.5)
         agent.fitness += 1 / 60
         if agent.game.score > score_before:
-            # Passing a pipe must dominate simply surviving a few extra frames.
-            agent.fitness += 12
+            # A pipe pass should outweigh several seconds of cautious stalling.
+            agent.fitness += 20
+        target_y = self._next_gap_center(agent.game)
+        agent.fitness += 0.008 * (1 - abs(agent.game.bird_y - target_y) / agent.game.config.height)
         if not agent.game.alive:
-            agent.fitness -= 1
+            agent.fitness -= 0.35
         agent.genome.fitness = agent.fitness
+
+    @staticmethod
+    def _next_gap_center(game: FlappyGame) -> float:
+        pipe = next((pipe for pipe in game.pipes if pipe.x + game.config.pipe_width >= game.config.bird_x), None)
+        return pipe.gap_y if pipe else game.config.height / 2
 
     def _sensors(self, game: FlappyGame) -> tuple[float, float, float, float]:
         pipe = next((pipe for pipe in game.pipes if pipe.x + game.config.pipe_width >= game.config.bird_x), None)
@@ -115,7 +126,13 @@ class EvolutionRunner:
         best = max(genomes, key=lambda genome: genome.fitness or float("-inf"))
         self.champion = best
         scores = [genome.fitness or 0.0 for genome in genomes]
-        self.history.append({"max": round(max(scores), 3), "avg": round(float(np.mean(scores)), 3)})
+        self.history.append(
+            {
+                "max": round(max(scores), 3),
+                "avg": round(float(np.mean(scores)), 3),
+                "firstGate": sum(agent.game.score >= 1 for agent in self.agents),
+            }
+        )
         self.history = self.history[-60:]
 
         self.population.reporters.post_evaluate(
@@ -173,6 +190,8 @@ class EvolutionRunner:
             "population": self.config.pop_size,
             "species": len(self.population.species.species),
             "bestFitness": round(max(agent.fitness for agent in self.agents), 3),
+            "passedFirstGate": sum(agent.game.score >= 1 for agent in self.agents),
+            "lastFirstGate": self.history[-1]["firstGate"] if self.history else 0,
             "history": self.history,
             "pipes": [{"x": pipe.x, "gapY": pipe.gap_y} for pipe in pipe_source.pipes],
             "birds": [

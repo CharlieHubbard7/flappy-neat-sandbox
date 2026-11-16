@@ -3,6 +3,10 @@
 A local FastAPI + canvas sandbox for playing Flappy Bird and watching NEAT
 evolve a population of neural networks in real time.
 
+Evolution generations share one deterministic training course. The centered
+first gate provides a clear early curriculum signal, and the Evolution panel
+shows the first-gate pass count from the most recently completed generation.
+
 ## Run locally
 
 ```bash

@@ -21,8 +21,8 @@
             <button class="mode-button" data-mode="evolution" type="button">Evolution</button>
           </div>
           <div class="scoreboard">
-            <span>Score <strong id="score">0</strong></span>
-            <span>Best <strong id="best">0</strong></span>
+            <span><span id="score-name">Score</span> <strong id="score">0</strong></span>
+            <span><span id="best-name">Best</span> <strong id="best">0</strong></span>
           </div>
         </div>
         <canvas id="game" width="480" height="640" aria-label="Flappy Bird canvas"></canvas>
@@ -46,6 +46,7 @@
           <div><span>Alive</span><strong id="alive">—</strong></div>
           <div><span>Species</span><strong id="species">—</strong></div>
           <div><span>Best fitness</span><strong id="fitness">—</strong></div>
+          <div><span>Last first-gate passes</span><strong id="first-gate">—</strong></div>
         </div>
         <div class="panel-heading"><h2>Leading topology</h2><span id="mutation-note">waiting for evolution</span></div>
         <canvas id="network" width="440" height="290" aria-label="Leading neural network topology"></canvas>

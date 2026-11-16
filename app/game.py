@@ -42,6 +42,7 @@ class FlappyGame:
         self.bird_y = self.config.height / 2
         self.bird_vy = 0.0
         self.pipes: list[Pipe] = []
+        self._pipe_count = 0
         self.score = 0
         self.alive = True
         self.time_since_pipe = self.config.pipe_interval - 0.65
@@ -76,6 +77,10 @@ class FlappyGame:
 
     def _new_pipe(self) -> Pipe:
         config = self.config
+        self._pipe_count += 1
+        if self._pipe_count == 1:
+            # A centered first gate gives both people and genomes a readable start.
+            return Pipe(config.width + 20, config.height / 2)
         min_gap_y = config.pipe_margin + config.pipe_gap / 2
         max_gap_y = config.height - config.pipe_margin - config.pipe_gap / 2
         return Pipe(config.width + 20, self._rng.uniform(min_gap_y, max_gap_y))
