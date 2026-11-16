@@ -15,6 +15,11 @@ app = FastAPI(title="Flappy NEAT Sandbox")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
+@app.get("/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @app.get("/")
 async def sandbox() -> FileResponse:
     return FileResponse(ROOT / "static" / "index.html")
