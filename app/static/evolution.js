@@ -14,6 +14,8 @@ const bestName = document.querySelector("#best-name");
 const toggle = document.querySelector("#toggle");
 const telemetry = Object.fromEntries(["generation", "alive", "species", "fitness", "first-gate"].map((name) => [name, document.querySelector(`#${name}`)]));
 const mutation = document.querySelector("#mutation-note");
+const humanGuide = document.querySelector("#human-guide");
+const evolutionContent = document.querySelector("#evolution-content");
 const inputReadouts = {
   vy: document.querySelector("#input-vy"),
   dx: document.querySelector("#input-dx"),
@@ -47,6 +49,8 @@ function setMode(mode) {
   });
   humanControls.hidden = mode !== "human";
   evolutionControls.hidden = mode !== "evolution";
+  humanGuide.hidden = mode !== "human";
+  evolutionContent.hidden = mode !== "evolution";
   scoreName.textContent = mode === "human" ? "Score" : "Generation";
   bestName.textContent = mode === "human" ? "Best" : "Fitness";
   window.dispatchEvent(new CustomEvent("sandboxmode", { detail: mode }));

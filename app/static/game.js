@@ -2,6 +2,7 @@ const canvas = document.querySelector("#game");
 const context = canvas.getContext("2d");
 const score = document.querySelector("#score");
 const best = document.querySelector("#best");
+const personalBest = document.querySelector("#personal-best");
 const status = document.querySelector("#game-status");
 const resetButton = document.querySelector("#reset");
 
@@ -9,6 +10,7 @@ let socket;
 window.sandboxMode = "human";
 let bestScore = Number(localStorage.getItem("flappy-neat-best") || 0);
 best.textContent = bestScore;
+personalBest.textContent = bestScore;
 
 function connect() {
   socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/play`);
@@ -31,6 +33,7 @@ function flap() { send("flap"); }
 canvas.addEventListener("pointerdown", () => { if (window.sandboxMode === "human") flap(); });
 window.addEventListener("keydown", (event) => {
   if (window.sandboxMode === "human" && event.code === "Space") { event.preventDefault(); flap(); }
+  if (window.sandboxMode === "human" && event.code === "KeyR") send("reset");
 });
 resetButton.addEventListener("click", () => send("reset"));
 
@@ -55,6 +58,7 @@ function render(state) {
     bestScore = state.score;
     localStorage.setItem("flappy-neat-best", String(bestScore));
     best.textContent = bestScore;
+    personalBest.textContent = bestScore;
   }
   status.textContent = state.waiting
     ? "Press Space or click to begin"

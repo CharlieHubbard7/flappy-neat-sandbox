@@ -49,6 +49,20 @@
       </section>
 
       <aside class="evolution-panel">
+        <div class="human-guide" id="human-guide">
+          <div class="panel-topline"><div class="panel-label">PILOT BRIEFING</div><span class="pilot-tag">HUMAN</span></div>
+          <h2 class="panel-title">A tiny course.<br />No room to coast.</h2>
+          <p class="guide-copy">Your job is simple: turn one precise flap into the next clean line through the pipe.</p>
+          <div class="flight-keys">
+            <div><kbd>SPACE</kbd><span>flap</span></div>
+            <div><kbd>CLICK</kbd><span>flap</span></div>
+            <div><kbd>R</kbd><span>reset</span></div>
+          </div>
+          <div class="personal-best"><span>PERSONAL BEST</span><strong id="personal-best">0</strong><small>Can the population beat you?</small></div>
+          <div class="guide-footer"><span class="status-dot"></span><p>The first pipe is centered. Everything after that is deterministic—but not forgiving.</p></div>
+        </div>
+
+        <div class="evolution-content" id="evolution-content" hidden>
         <div class="panel-topline"><div class="panel-label">EVOLUTION PANEL</div><span class="live-tag">LIVE</span></div>
         <h2 class="panel-title">A population learns<br />through selection.</h2>
         <div class="telemetry">
@@ -73,6 +87,7 @@
         <div class="storage-controls">
           <button id="save-champion" type="button">Save champion</button>
           <button id="load-champion" type="button">Load champion</button>
+        </div>
         </div>
       </aside>
 
