@@ -6,7 +6,6 @@ from pathlib import Path
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 
-from .evolution import EvolutionRunner
 from .game import FlappyGame
 
 ROOT = Path(__file__).parent
@@ -45,30 +44,26 @@ async def play_session(websocket: WebSocket) -> None:
 
 @app.websocket("/ws/evolution")
 async def evolution_session(websocket: WebSocket) -> None:
+    # Importing NEAT only after the AI mode is selected keeps the first human
+    # interaction small and responsive on serverless cold starts.
+    from .evolution import EvolutionRunner
+
     await websocket.accept()
     runner = EvolutionRunner()
-    frames_per_tick = 1
+    updates = 0
 
     try:
         while True:
             try:
-                message = await asyncio.wait_for(websocket.receive_json(), timeout=1 / 30)
-                kind = message.get("type")
-                if kind == "toggle":
-                    runner.paused = not runner.paused
-                elif kind == "speed":
-                    frames_per_tick = {"1": 1, "5": 5, "warp": 1_500}.get(message.get("value"), 1)
-                elif kind == "reset":
-                    runner.reset()
-                elif kind == "save":
-                    await websocket.send_json({"type": "saved", "ok": runner.save_champion()})
-                elif kind == "load":
-                    await websocket.send_json({"type": "loaded", "ok": runner.load_champion()})
+                await asyncio.wait_for(websocket.receive_json(), timeout=1 / 12)
             except TimeoutError:
                 pass
 
-            runner.tick(frames_per_tick)
-            await websocket.send_json({"type": "state", **runner.snapshot()})
+            # Simulate several deterministic frames between visual updates. The
+            # browser sees a calm 12 Hz stream while evolution still advances.
+            runner.tick(6)
+            updates += 1
+            await websocket.send_json({"type": "state", **runner.snapshot(include_graph=updates % 6 == 1)})
     except WebSocketDisconnect:
         return
 

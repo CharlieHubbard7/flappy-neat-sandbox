@@ -179,12 +179,11 @@ class EvolutionRunner:
         self._start_generation()
         return True
 
-    def snapshot(self) -> dict:
+    def snapshot(self, include_graph: bool = True) -> dict:
         leader = max(self.agents, key=lambda agent: agent.fitness)
-        graph = self._graph(leader)
         active = [agent for agent in self.agents if agent.game.alive]
         pipe_source = active[0].game if active else leader.game
-        return {
+        state = {
             "generation": self.generation,
             "alive": self.alive_count,
             "population": self.config.pop_size,
@@ -204,8 +203,10 @@ class EvolutionRunner:
                 "inputs": dict(zip(INPUT_NAMES, leader.inputs)),
                 "output": leader.output,
             },
-            "graph": graph,
         }
+        if include_graph:
+            state["graph"] = self._graph(leader)
+        return state
 
     def _graph(self, leader: Agent) -> dict:
         genome = leader.genome

@@ -21,6 +21,13 @@ class EvolutionRunnerTests(unittest.TestCase):
 
         self.assertGreaterEqual(runner.history[-1]["firstGate"], runner.history[0]["firstGate"])
 
+    def test_snapshot_can_skip_topology_between_visual_updates(self) -> None:
+        runner = EvolutionRunner()
+        state = runner.snapshot(include_graph=False)
+
+        self.assertNotIn("graph", state)
+        self.assertEqual(state["population"], 50)
+
 
 if __name__ == "__main__":
     unittest.main()
