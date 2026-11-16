@@ -8,24 +8,33 @@
   </head>
   <body>
     <main class="shell">
-      <header>
-        <p class="eyebrow">NEUROEVOLUTION PLAYGROUND</p>
-        <h1>Flappy Bird <span>Sandbox</span></h1>
-        <p class="subtitle">Start with your own reflexes. Then let evolution take the controls.</p>
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">A SMALL NEUROEVOLUTION EXPERIMENT</p>
+          <h1>Flappy, <span>evolved.</span></h1>
+          <p class="subtitle">Fly the course yourself, then watch 50 neural networks learn the exact same challenge in real time.</p>
+        </div>
+        <div class="system-status" aria-label="Simulation status">
+          <span class="status-dot"></span>
+          <div><strong>Simulation online</strong><small>Canvas · FastAPI · WebSockets</small></div>
+        </div>
       </header>
 
       <section class="game-card" aria-label="Flappy Bird game">
         <div class="game-toolbar">
           <div class="mode-switch" role="group" aria-label="Sandbox mode">
-            <button class="mode-button active" data-mode="human" type="button">Human</button>
-            <button class="mode-button" data-mode="evolution" type="button">Evolution</button>
+            <button class="mode-button active" data-mode="human" type="button" aria-pressed="true">Human flight</button>
+            <button class="mode-button" data-mode="evolution" type="button" aria-pressed="false">Evolution lab</button>
           </div>
           <div class="scoreboard">
-            <span><span id="score-name">Score</span> <strong id="score">0</strong></span>
-            <span><span id="best-name">Best</span> <strong id="best">0</strong></span>
+            <span><span id="score-name">Score</span><strong id="score">0</strong></span>
+            <span><span id="best-name">Best</span><strong id="best">0</strong></span>
           </div>
         </div>
-        <canvas id="game" width="480" height="640" aria-label="Flappy Bird canvas"></canvas>
+        <div class="game-stage">
+          <canvas id="game" width="480" height="640" aria-label="Flappy Bird canvas"></canvas>
+          <div class="stage-mark" aria-hidden="true"><span>01</span><i></i><span>FLIGHT COURSE</span></div>
+        </div>
         <div class="game-footer">
           <span id="game-status">Press Space or click to flap</span>
           <div class="human-controls"><button id="reset" type="button">Reset run</button></div>
@@ -40,7 +49,8 @@
       </section>
 
       <aside class="evolution-panel">
-        <div class="panel-label">EVOLUTION PANEL</div>
+        <div class="panel-topline"><div class="panel-label">EVOLUTION PANEL</div><span class="live-tag">LIVE</span></div>
+        <h2 class="panel-title">A population learns<br />through selection.</h2>
         <div class="telemetry">
           <div><span>Generation</span><strong id="generation">—</strong></div>
           <div><span>Alive</span><strong id="alive">—</strong></div>
@@ -50,6 +60,14 @@
         </div>
         <div class="panel-heading"><h2>Leading topology</h2><span id="mutation-note">waiting for evolution</span></div>
         <canvas id="network" width="440" height="290" aria-label="Leading neural network topology"></canvas>
+        <div class="signal-grid" aria-label="Leading bird decisions">
+          <div><span>vy</span><strong id="input-vy">—</strong></div>
+          <div><span>dx</span><strong id="input-dx">—</strong></div>
+          <div><span>gap top</span><strong id="input-top">—</strong></div>
+          <div><span>gap bottom</span><strong id="input-bottom">—</strong></div>
+          <div class="jump-signal"><span>jump</span><strong id="jump-value">—</strong></div>
+        </div>
+        <div class="weight-key"><span><i class="positive"></i>positive weight</span><span><i class="negative"></i>negative weight</span><span><i class="novel"></i>new mutation</span></div>
         <div class="panel-heading"><h2>Fitness history</h2><span>max / avg</span></div>
         <canvas id="chart" width="440" height="105" aria-label="Fitness history chart"></canvas>
         <div class="storage-controls">
@@ -57,6 +75,15 @@
           <button id="load-champion" type="button">Load champion</button>
         </div>
       </aside>
+
+      <section class="explainers" aria-label="How the simulation works">
+        <div class="explainer-intro"><p class="eyebrow">HOW TO READ THE LAB</p><h2>Not a prerecorded animation.</h2><p>Each frame is a running physics simulation, evaluated by the bird’s evolving neural network.</p></div>
+        <ol>
+          <li><span>01</span><div><strong>Sense</strong><p>Velocity and pipe geometry become four normalized inputs.</p></div></li>
+          <li><span>02</span><div><strong>Decide</strong><p>Weighted connections resolve into one jump signal.</p></div></li>
+          <li><span>03</span><div><strong>Select</strong><p>Successful genomes reproduce while new structures stay protected by species.</p></div></li>
+        </ol>
+      </section>
     </main>
     <script type="module" src="/static/game.js"></script>
     <script type="module" src="/static/evolution.js"></script>

@@ -14,6 +14,13 @@ const bestName = document.querySelector("#best-name");
 const toggle = document.querySelector("#toggle");
 const telemetry = Object.fromEntries(["generation", "alive", "species", "fitness", "first-gate"].map((name) => [name, document.querySelector(`#${name}`)]));
 const mutation = document.querySelector("#mutation-note");
+const inputReadouts = {
+  vy: document.querySelector("#input-vy"),
+  dx: document.querySelector("#input-dx"),
+  dy_top: document.querySelector("#input-top"),
+  dy_bottom: document.querySelector("#input-bottom"),
+};
+const jumpValue = document.querySelector("#jump-value");
 let socket;
 let paused = false;
 
@@ -33,7 +40,11 @@ function connect() {
 function setMode(mode) {
   if (window.sandboxMode === mode) return;
   window.sandboxMode = mode;
-  document.querySelectorAll(".mode-button").forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
+  document.querySelectorAll(".mode-button").forEach((button) => {
+    const active = button.dataset.mode === mode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
   humanControls.hidden = mode !== "human";
   evolutionControls.hidden = mode !== "evolution";
   scoreName.textContent = mode === "human" ? "Score" : "Generation";
@@ -68,6 +79,11 @@ function render(state) {
   telemetry.species.textContent = state.species;
   telemetry.fitness.textContent = state.bestFitness.toFixed(2);
   telemetry["first-gate"].textContent = `${state.lastFirstGate || state.passedFirstGate} / ${state.population}`;
+  Object.entries(state.leader.inputs).forEach(([name, value]) => {
+    inputReadouts[name].textContent = Number(value).toFixed(2);
+  });
+  jumpValue.textContent = state.leader.output.toFixed(2);
+  jumpValue.parentElement.classList.toggle("active", state.leader.output > 0.5);
   const addedNodes = state.graph.newNodes.length;
   const addedEdges = state.graph.newConnections.length;
   mutation.textContent = addedNodes || addedEdges ? `new: ${addedNodes} node${addedNodes === 1 ? "" : "s"}, ${addedEdges} edge${addedEdges === 1 ? "" : "s"}` : "stable topology";
