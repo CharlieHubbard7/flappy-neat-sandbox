@@ -5,105 +5,117 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Flappy, evolved. — Interactive NEAT Sandbox</title>
     <meta name="description" content="Fly a deterministic Flappy Bird course, then watch 50 NEAT agents evolve a policy in real time." />
-    <meta name="theme-color" content="#071014" />
+    <meta name="theme-color" content="#e8e5df" />
     <meta property="og:title" content="Flappy, evolved." />
     <meta property="og:description" content="An interactive canvas sandbox for watching NEAT learn Flappy Bird in real time." />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <header class="masthead">
-        <div>
-          <p class="eyebrow">A SMALL NEUROEVOLUTION EXPERIMENT</p>
-          <h1>Flappy, <span>evolved.</span></h1>
-          <p class="subtitle">Fly the course yourself, then watch 50 neural networks learn the exact same challenge in real time.</p>
-        </div>
-        <div class="system-status" aria-label="Simulation status">
-          <span class="status-dot"></span>
-          <div><strong>Simulation online</strong><small>Canvas · FastAPI · WebSockets</small></div>
-        </div>
-      </header>
+    <header class="site-header">
+      <a class="wordmark" href="#top" aria-label="Flappy evolved home">Flappy, evolved.</a>
+      <nav aria-label="Page sections">
+        <a href="#play">Play</a>
+        <a href="#observe">Observe</a>
+        <a href="#method">Method</a>
+      </nav>
+      <a class="header-cta" href="#play">Open sandbox</a>
+    </header>
 
-      <section class="game-card" aria-label="Flappy Bird game">
-        <div class="game-toolbar">
-          <div class="mode-switch" role="group" aria-label="Sandbox mode">
-            <button class="mode-button active" data-mode="human" type="button" aria-pressed="true">Human flight</button>
-            <button class="mode-button" data-mode="evolution" type="button" aria-pressed="false">Evolution lab</button>
-          </div>
-          <div class="scoreboard">
-            <span><span id="score-name">Score</span><strong id="score">0</strong></span>
-            <span><span id="best-name">Best</span><strong id="best">0</strong></span>
-          </div>
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <p class="kicker">A SMALL EXPERIMENT IN NEUROEVOLUTION</p>
+        <h1 id="hero-title"><em>One little bird.</em><br />Fifty ways to <span>learn to fly.</span></h1>
+        <p class="hero-copy">Play the same deterministic course yourself, then watch a population discover its own strategy—one generation at a time.</p>
+        <a class="start-link" href="#play">Start the experiment <span>↓</span></a>
+      </section>
+
+      <section class="playground" id="play" aria-labelledby="play-title">
+        <div class="section-intro">
+          <p class="kicker">01 — THE COURSE</p>
+          <h2 id="play-title">First, feel<br />the physics.</h2>
+          <p>Every bird gets the same gravity, the same pipes, and the same small margin for error.</p>
         </div>
-        <div class="game-stage">
-          <canvas id="game" width="480" height="640" aria-label="Flappy Bird canvas"></canvas>
-          <div class="stage-mark" aria-hidden="true"><span>01</span><i></i><span>FLIGHT COURSE</span></div>
-        </div>
-        <div class="game-footer">
-          <span id="game-status">Press Space or click to flap</span>
-          <div class="human-controls"><button id="reset" type="button">Reset run</button></div>
-          <div class="evolution-controls" hidden>
-            <button id="toggle" type="button">Pause</button>
-            <button class="speed active" data-speed="1" type="button">1×</button>
-            <button class="speed" data-speed="5" type="button">5×</button>
-            <button class="speed" data-speed="warp" type="button">Warp</button>
-            <button id="evolution-reset" type="button">Reset</button>
-          </div>
+
+        <div class="simulation">
+          <section class="game-card" aria-label="Flappy Bird game">
+            <div class="game-toolbar">
+              <div class="mode-switch" role="group" aria-label="Sandbox mode">
+                <button class="mode-button active" data-mode="human" type="button" aria-pressed="true">Human</button>
+                <button class="mode-button" data-mode="evolution" type="button" aria-pressed="false">Evolution</button>
+              </div>
+              <div class="scoreboard">
+                <span><span id="score-name">Score</span><strong id="score">0</strong></span>
+                <span><span id="best-name">Best</span><strong id="best">0</strong></span>
+              </div>
+            </div>
+            <div class="game-stage">
+              <canvas id="game" width="480" height="640" aria-label="Flappy Bird canvas"></canvas>
+              <div class="stage-mark" aria-hidden="true">THE SAME COURSE, EVERY TIME</div>
+            </div>
+            <div class="game-footer">
+              <span id="game-status">Press Space or click to begin</span>
+              <div class="human-controls"><button id="reset" type="button">Reset <kbd>R</kbd></button></div>
+              <div class="evolution-controls" hidden>
+                <button id="toggle" type="button">Pause</button>
+                <button class="speed active" data-speed="1" type="button">1×</button>
+                <button class="speed" data-speed="5" type="button">5×</button>
+                <button class="speed" data-speed="warp" type="button">Warp</button>
+                <button id="evolution-reset" type="button">Reset</button>
+              </div>
+            </div>
+          </section>
+
+          <aside class="side-note" id="observe">
+            <div class="human-guide" id="human-guide">
+              <p class="note-index">YOUR TURN</p>
+              <h2>A clean line<br />takes restraint.</h2>
+              <p class="guide-copy">Use <strong>Space</strong> or a click to flap. The first gate is centered; the rest ask you to find the rhythm.</p>
+              <div class="personal-best"><span>PERSONAL BEST</span><strong id="personal-best">0</strong></div>
+              <p class="quiet-note">When you are ready, open Evolution to hand the course to the population.</p>
+            </div>
+
+            <div class="evolution-content" id="evolution-content" hidden>
+              <p class="note-index">02 — THE POPULATION</p>
+              <h2>Learning in<br />plain sight.</h2>
+              <div class="telemetry">
+                <div><span>Generation</span><strong id="generation">—</strong></div>
+                <div><span>Alive</span><strong id="alive">—</strong></div>
+                <div><span>Species</span><strong id="species">—</strong></div>
+                <div><span>Best fitness</span><strong id="fitness">—</strong></div>
+                <div><span>Passed gate one</span><strong id="first-gate">—</strong></div>
+              </div>
+              <div class="panel-heading"><h3>Leading network</h3><span id="mutation-note">waiting for evolution</span></div>
+              <canvas id="network" width="440" height="290" aria-label="Leading neural network topology"></canvas>
+              <div class="signal-grid" aria-label="Leading bird decisions">
+                <div><span>vy</span><strong id="input-vy">—</strong></div>
+                <div><span>dx</span><strong id="input-dx">—</strong></div>
+                <div><span>top</span><strong id="input-top">—</strong></div>
+                <div><span>bottom</span><strong id="input-bottom">—</strong></div>
+                <div class="jump-signal"><span>jump</span><strong id="jump-value">—</strong></div>
+              </div>
+              <div class="weight-key"><span><i class="positive"></i>positive</span><span><i class="negative"></i>negative</span><span><i class="novel"></i>new</span></div>
+              <div class="panel-heading"><h3>Fitness over time</h3><span>max / avg</span></div>
+              <canvas id="chart" width="440" height="105" aria-label="Fitness history chart"></canvas>
+              <div class="storage-controls">
+                <button id="save-champion" type="button">Save champion</button>
+                <button id="load-champion" type="button">Load champion</button>
+              </div>
+            </div>
+          </aside>
         </div>
       </section>
 
-      <aside class="evolution-panel">
-        <div class="human-guide" id="human-guide">
-          <div class="panel-topline"><div class="panel-label">PILOT BRIEFING</div><span class="pilot-tag">HUMAN</span></div>
-          <h2 class="panel-title">A tiny course.<br />No room to coast.</h2>
-          <p class="guide-copy">Your job is simple: turn one precise flap into the next clean line through the pipe.</p>
-          <div class="flight-keys">
-            <div><kbd>SPACE</kbd><span>flap</span></div>
-            <div><kbd>CLICK</kbd><span>flap</span></div>
-            <div><kbd>R</kbd><span>reset</span></div>
-          </div>
-          <div class="personal-best"><span>PERSONAL BEST</span><strong id="personal-best">0</strong><small>Can the population beat you?</small></div>
-          <div class="guide-footer"><span class="status-dot"></span><p>The first pipe is centered. Everything after that is deterministic—but not forgiving.</p></div>
+      <section class="method" id="method" aria-labelledby="method-title">
+        <p class="kicker">03 — WHAT YOU ARE WATCHING</p>
+        <h2 id="method-title"><em>Four observations.</em> One decision.<br /><span>A population that remembers.</span></h2>
+        <div class="method-grid">
+          <p>Velocity, distance to the pipe, and the upper and lower edges of its gap become the bird’s four inputs.</p>
+          <p>The leading genome is drawn live on the right: teal weights encourage a signal; coral weights push against it.</p>
+          <p>Genomes that fly farther reproduce. New structures are protected in species long enough to prove their value.</p>
         </div>
-
-        <div class="evolution-content" id="evolution-content" hidden>
-        <div class="panel-topline"><div class="panel-label">EVOLUTION PANEL</div><span class="live-tag">LIVE</span></div>
-        <h2 class="panel-title">A population learns<br />through selection.</h2>
-        <div class="telemetry">
-          <div><span>Generation</span><strong id="generation">—</strong></div>
-          <div><span>Alive</span><strong id="alive">—</strong></div>
-          <div><span>Species</span><strong id="species">—</strong></div>
-          <div><span>Best fitness</span><strong id="fitness">—</strong></div>
-          <div><span>Last first-gate passes</span><strong id="first-gate">—</strong></div>
-        </div>
-        <div class="panel-heading"><h2>Leading topology</h2><span id="mutation-note">waiting for evolution</span></div>
-        <canvas id="network" width="440" height="290" aria-label="Leading neural network topology"></canvas>
-        <div class="signal-grid" aria-label="Leading bird decisions">
-          <div><span>vy</span><strong id="input-vy">—</strong></div>
-          <div><span>dx</span><strong id="input-dx">—</strong></div>
-          <div><span>gap top</span><strong id="input-top">—</strong></div>
-          <div><span>gap bottom</span><strong id="input-bottom">—</strong></div>
-          <div class="jump-signal"><span>jump</span><strong id="jump-value">—</strong></div>
-        </div>
-        <div class="weight-key"><span><i class="positive"></i>positive weight</span><span><i class="negative"></i>negative weight</span><span><i class="novel"></i>new mutation</span></div>
-        <div class="panel-heading"><h2>Fitness history</h2><span>max / avg</span></div>
-        <canvas id="chart" width="440" height="105" aria-label="Fitness history chart"></canvas>
-        <div class="storage-controls">
-          <button id="save-champion" type="button">Save champion</button>
-          <button id="load-champion" type="button">Load champion</button>
-        </div>
-        </div>
-      </aside>
-
-      <section class="explainers" aria-label="How the simulation works">
-        <div class="explainer-intro"><p class="eyebrow">HOW TO READ THE LAB</p><h2>Not a prerecorded animation.</h2><p>Each frame is a running physics simulation, evaluated by the bird’s evolving neural network.</p></div>
-        <ol>
-          <li><span>01</span><div><strong>Sense</strong><p>Velocity and pipe geometry become four normalized inputs.</p></div></li>
-          <li><span>02</span><div><strong>Decide</strong><p>Weighted connections resolve into one jump signal.</p></div></li>
-          <li><span>03</span><div><strong>Select</strong><p>Successful genomes reproduce while new structures stay protected by species.</p></div></li>
-        </ol>
       </section>
     </main>
+    <footer>Built as a living sketch of evolution in motion.</footer>
     <script type="module" src="/static/game.js"></script>
     <script type="module" src="/static/evolution.js"></script>
   </body>

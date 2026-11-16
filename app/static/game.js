@@ -69,11 +69,11 @@ function render(state) {
 
 function drawLaunchHint() {
   context.save();
-  context.fillStyle = "#06171bb8";
+  context.fillStyle = "#f8f5eed9";
   context.roundRect(108, 252, 264, 96, 16); context.fill();
-  context.strokeStyle = "#aef4d9aa"; context.lineWidth = 1; context.roundRect(108, 252, 264, 96, 16); context.stroke();
-  context.fillStyle = "#f1fffb"; context.font = "700 19px system-ui, sans-serif"; context.textAlign = "center"; context.fillText("Ready when you are", 240, 290);
-  context.fillStyle = "#a9c9c6"; context.font = "12px ui-monospace, monospace"; context.fillText("SPACE  /  CLICK  TO FLY", 240, 318);
+  context.strokeStyle = "#315f8688"; context.lineWidth = 1; context.roundRect(108, 252, 264, 96, 16); context.stroke();
+  context.fillStyle = "#211c19"; context.font = "italic 25px Georgia, serif"; context.textAlign = "center"; context.fillText("Ready when you are", 240, 291);
+  context.fillStyle = "#315f86"; context.font = "10px system-ui, sans-serif"; context.fillText("SPACE  /  CLICK  TO FLY", 240, 319);
   context.restore();
 }
 

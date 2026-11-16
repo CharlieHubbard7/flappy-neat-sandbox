@@ -76,7 +76,7 @@ document.querySelector("#load-champion").addEventListener("click", () => send("l
 
 function render(state) {
   drawWorld(state.pipes);
-  state.birds.forEach((bird) => drawBird(130, bird.y, bird.vy, bird.leader ? "#a4f763" : "#50cfba", bird.leader ? 1 : 0.22));
+  state.birds.forEach((bird) => drawBird(130, bird.y, bird.vy, bird.leader ? "#315f86" : "#c87c62", bird.leader ? 1 : 0.22));
   drawSensorRays(state, state.pipes[0]);
   score.textContent = state.generation;
   best.textContent = state.bestFitness.toFixed(1);
@@ -103,13 +103,13 @@ function drawWorld(pipes) {
 }
 
 function drawBird(x, y, vy, color, alpha) {
-  paintBird(context, x, y, vy, { color, opacity: alpha, leader: color === "#a4f763" });
+  paintBird(context, x, y, vy, { color, opacity: alpha, leader: color === "#315f86" });
 }
 
 function drawSensorRays(state, nextPipe) {
   if (!state.birds.length) return;
   const bird = state.leader;
-  context.save(); context.setLineDash([4, 5]); context.lineWidth = 1; context.strokeStyle = "#d0ffe6"; context.fillStyle = "#d0ffe6"; context.globalAlpha = 0.55;
+  context.save(); context.setLineDash([4, 5]); context.lineWidth = 1; context.strokeStyle = "#315f86"; context.fillStyle = "#315f86"; context.globalAlpha = 0.55;
   const targets = nextPipe ? [[nextPipe.x, bird.y, "dx"], [nextPipe.x, nextPipe.gapY - 82, "top"], [nextPipe.x, nextPipe.gapY + 82, "bottom"]] : [[310, bird.y, "dx"]];
   targets.forEach(([x, y, label]) => { context.beginPath(); context.moveTo(130, bird.y); context.lineTo(x, y); context.stroke(); context.fillText(label, x + 5, y - 5); });
   context.setLineDash([]); context.fillText(`vy ${bird.vy.toFixed(0)}`, 145, bird.y - 22); context.restore();
@@ -127,7 +127,7 @@ function drawNetwork(graph, output) {
   const newEdges = new Set(graph.newConnections.map((edge) => edge.join(":")));
   graph.connections.forEach((edge) => {
     const from = positions.get(edge.from); const to = positions.get(edge.to); if (!from || !to) return;
-    network.strokeStyle = newEdges.has(`${edge.from}:${edge.to}`) ? "#f8d66d" : edge.weight >= 0 ? "#36cbb3" : "#ef7765";
+    network.strokeStyle = newEdges.has(`${edge.from}:${edge.to}`) ? "#b18a47" : edge.weight >= 0 ? "#3f7e75" : "#c76b59";
     network.globalAlpha = Math.min(0.88, 0.25 + Math.abs(edge.weight) / 3); network.lineWidth = 1 + Math.min(4, Math.abs(edge.weight));
     network.beginPath(); network.moveTo(from.x + 10, from.y); network.lineTo(to.x - 10, to.y); network.stroke();
   });
@@ -135,10 +135,10 @@ function drawNetwork(graph, output) {
   graph.nodes.forEach((node) => {
     const point = positions.get(node); if (!point) return;
     const activation = Math.min(1, Math.abs(graph.activations[String(node)] || 0)); const isOutput = node === 0;
-    network.fillStyle = isOutput && output > 0.5 ? "#a4f763" : `rgba(77, 226, 196, ${0.22 + activation * 0.78})`;
+    network.fillStyle = isOutput && output > 0.5 ? "#315f86" : `rgba(63, 126, 117, ${0.22 + activation * 0.78})`;
     network.shadowColor = network.fillStyle; network.shadowBlur = activation * 15 + (isOutput && output > 0.5 ? 12 : 0);
     network.beginPath(); network.arc(point.x, point.y, 11, 0, Math.PI * 2); network.fill(); network.shadowBlur = 0;
-    network.fillStyle = "#b8cccf"; network.font = "10px ui-monospace, monospace"; network.fillText(point.label, point.x - 17, point.y + 25);
+    network.fillStyle = "#594f48"; network.font = "10px ui-monospace, monospace"; network.fillText(point.label, point.x - 17, point.y + 25);
   });
 }
 
@@ -147,7 +147,7 @@ function drawChart(history) {
   chart.clearRect(0, 0, width, height);
   if (history.length < 2) return;
   const ceiling = Math.max(1, ...history.flatMap((item) => [item.max, item.avg]));
-  [["max", "#a4f763"], ["avg", "#4ce2c4"]].forEach(([key, color]) => {
+  [["max", "#315f86"], ["avg", "#867c73"]].forEach(([key, color]) => {
     chart.strokeStyle = color; chart.lineWidth = 1.8; chart.beginPath();
     history.forEach((point, index) => {
       const x = 10 + (index / (history.length - 1)) * (width - 20);
