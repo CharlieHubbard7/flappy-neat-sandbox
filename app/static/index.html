@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Flappy NEAT Sandbox</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <p class="eyebrow">NEUROEVOLUTION PLAYGROUND</p>
+        <h1>Flappy Bird <span>Sandbox</span></h1>
+        <p class="subtitle">Start with your own reflexes. Then let evolution take the controls.</p>
+      </header>
+
+      <section class="game-card" aria-label="Flappy Bird game">
+        <div class="game-toolbar">
+          <div class="mode-pill">Human play</div>
+          <div class="scoreboard">
+            <span>Score <strong id="score">0</strong></span>
+            <span>Best <strong id="best">0</strong></span>
+          </div>
+        </div>
+        <canvas id="game" width="480" height="640" aria-label="Flappy Bird canvas"></canvas>
+        <div class="game-footer">
+          <span id="game-status">Press Space or click to flap</span>
+          <button id="reset" type="button">Reset run</button>
+        </div>
+      </section>
+
+      <aside class="coming-soon">
+        <div class="panel-label">EVOLUTION PANEL</div>
+        <h2>Neural topology</h2>
+        <p>Population telemetry, live network activations, and mutation history arrive with the NEAT runner.</p>
+        <div class="node-preview" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b><em></em></div>
+      </aside>
+    </main>
+    <script type="module" src="/static/game.js"></script>
+  </body>
+</html>
