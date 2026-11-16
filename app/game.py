@@ -29,9 +29,16 @@ class Pipe:
 class FlappyGame:
     """Deterministic game state shared by human play and simulation modes."""
 
-    def __init__(self, seed: int = 7, config: GameConfig | None = None) -> None:
+    def __init__(
+        self,
+        seed: int = 7,
+        config: GameConfig | None = None,
+        waiting: bool = False,
+    ) -> None:
         self.config = config or GameConfig()
         self.seed = seed
+        self.starts_waiting = waiting
+        self.waiting = waiting
         self._rng = Random(seed)
         self.reset()
 
@@ -39,6 +46,7 @@ class FlappyGame:
         if seed is not None:
             self.seed = seed
         self._rng = Random(self.seed)
+        self.waiting = self.starts_waiting
         self.bird_y = self.config.height / 2
         self.bird_vy = 0.0
         self.pipes: list[Pipe] = []
@@ -55,6 +63,10 @@ class FlappyGame:
         """Advance by a fixed time slice; callers should cap dt before calling."""
         if not self.alive:
             return
+        if self.waiting:
+            if not flap:
+                return
+            self.waiting = False
         if flap:
             self.flap()
 
@@ -111,4 +123,5 @@ class FlappyGame:
             "pipes": [{"x": pipe.x, "gapY": pipe.gap_y} for pipe in self.pipes],
             "score": self.score,
             "alive": self.alive,
+            "waiting": self.waiting,
         }

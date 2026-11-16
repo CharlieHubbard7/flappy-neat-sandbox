@@ -27,6 +27,16 @@ class FlappyGameTests(unittest.TestCase):
 
         self.assertEqual(game.pipes[0].gap_y, game.config.height / 2)
 
+    def test_waiting_game_starts_on_first_flap(self) -> None:
+        game = FlappyGame(waiting=True)
+        game.step(1 / 60)
+        self.assertTrue(game.waiting)
+        self.assertEqual(game.bird_y, game.config.height / 2)
+
+        game.step(1 / 60, flap=True)
+        self.assertFalse(game.waiting)
+        self.assertLess(game.bird_vy, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

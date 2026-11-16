@@ -48,6 +48,7 @@ function render(state) {
   drawBackdrop();
   state.pipes.forEach(drawPipe);
   drawBird(state.bird);
+  if (state.waiting) drawLaunchHint();
 
   score.textContent = state.score;
   if (state.score > bestScore) {
@@ -55,7 +56,19 @@ function render(state) {
     localStorage.setItem("flappy-neat-best", String(bestScore));
     best.textContent = bestScore;
   }
-  status.textContent = state.alive ? "Space or click to flap" : "Crashed — reset to try again";
+  status.textContent = state.waiting
+    ? "Press Space or click to begin"
+    : state.alive ? "Space or click to flap" : "Crashed — reset to try again";
+}
+
+function drawLaunchHint() {
+  context.save();
+  context.fillStyle = "#06171bb8";
+  context.roundRect(108, 252, 264, 96, 16); context.fill();
+  context.strokeStyle = "#aef4d9aa"; context.lineWidth = 1; context.roundRect(108, 252, 264, 96, 16); context.stroke();
+  context.fillStyle = "#f1fffb"; context.font = "700 19px system-ui, sans-serif"; context.textAlign = "center"; context.fillText("Ready when you are", 240, 290);
+  context.fillStyle = "#a9c9c6"; context.font = "12px ui-monospace, monospace"; context.fillText("SPACE  /  CLICK  TO FLY", 240, 318);
+  context.restore();
 }
 
 function drawBackdrop() {

@@ -23,7 +23,7 @@ async def sandbox() -> FileResponse:
 @app.websocket("/ws/play")
 async def play_session(websocket: WebSocket) -> None:
     await websocket.accept()
-    game = FlappyGame()
+    game = FlappyGame(waiting=True)
     frame_time = 1 / 60
 
     try:
