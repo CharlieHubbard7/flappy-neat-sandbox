@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Flappy Bird</title>
+    <meta name="description" content="A minimal interactive Flappy Bird and NEAT evolution experiment." />
+    <meta name="theme-color" content="#eee8df" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-mode="human">
+    <main class="app-shell">
+      <header class="topbar">
+        <h1>AI Flappy Bird</h1>
+        <div class="mode-switch" role="group" aria-label="Play mode">
+          <button class="mode-button active" data-mode="human" type="button" aria-pressed="true">Human</button>
+          <button class="mode-button" data-mode="evolution" type="button" aria-pressed="false">AI</button>
+        </div>
+        <dl class="headline-metrics" aria-live="polite">
+          <div id="metric-one"><dt id="metric-one-label">score</dt><dd id="metric-one-value">0</dd></div>
+          <div id="metric-two"><dt id="metric-two-label">best</dt><dd id="metric-two-value">0</dd></div>
+          <div id="metric-three" hidden><dt id="metric-three-label">species</dt><dd id="metric-three-value">—</dd></div>
+          <div id="metric-four" hidden><dt id="metric-four-label">fitness</dt><dd id="metric-four-value">—</dd></div>
+        </dl>
+      </header>
+
+      <section class="playfield" aria-label="Flappy Bird simulation">
+        <div class="game-frame">
+          <canvas id="game" width="480" height="640" aria-label="Flappy Bird game. Click or press Space to flap."></canvas>
+        </div>
+
+        <aside class="inspector" id="inspector" aria-label="AI evolution metrics" hidden>
+          <dl class="ai-metrics">
+            <div><dt>generation</dt><dd id="generation">—</dd></div>
+            <div><dt>alive</dt><dd id="alive">—</dd></div>
+            <div><dt>gate 1</dt><dd id="first-gate">—</dd></div>
+          </dl>
+          <canvas id="network" width="360" height="270" aria-label="Leading neural network"></canvas>
+          <canvas id="chart" width="360" height="104" aria-label="Fitness history"></canvas>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="/game.js"></script>
+    <script type="module" src="/evolution.js"></script>
+  </body>
+</html>

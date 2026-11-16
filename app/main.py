@@ -4,25 +4,19 @@ import asyncio
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .evolution import EvolutionRunner
 from .game import FlappyGame
 
 ROOT = Path(__file__).parent
+PUBLIC = ROOT.parent / "public"
 app = FastAPI(title="Flappy NEAT Sandbox")
-app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
-
-
-@app.get("/")
-async def sandbox() -> FileResponse:
-    return FileResponse(ROOT / "static" / "index.html")
 
 
 @app.websocket("/ws/play")
@@ -77,3 +71,8 @@ async def evolution_session(websocket: WebSocket) -> None:
             await websocket.send_json({"type": "state", **runner.snapshot()})
     except WebSocketDisconnect:
         return
+
+
+# Vercel serves this directory from its edge cache; the mount retains the same
+# zero-configuration paths for local FastAPI development.
+app.mount("/", StaticFiles(directory=PUBLIC, html=True), name="public")
