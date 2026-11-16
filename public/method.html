@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Method — NEAT Flappy Bird</title>
+    <meta name="description" content="A project note on the NEAT Flappy Bird experiment." />
+    <link rel="stylesheet" href="/method.css" />
+  </head>
+  <body>
+    <header class="method-header">
+      <a class="brand" href="/">NEAT Flappy Bird</a>
+      <a class="lab-link" href="/">Open the lab <span>↗</span></a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow">Project note · neural evolution</p>
+        <h1>I made an arcade game into a small, inspectable experiment in learning.</h1>
+        <p class="lede">This is not a pre-trained agent performing a trick. Every bird is a distinct neural network, evaluated on the same course, selected by fitness, and recombined into the next generation in the browser.</p>
+        <dl class="facts">
+          <div><dt>population</dt><dd>50 genomes</dd></div>
+          <div><dt>observation</dt><dd>4 signals</dd></div>
+          <div><dt>action</dt><dd>flap / coast</dd></div>
+          <div><dt>runtime</dt><dd>Python + Canvas</dd></div>
+        </dl>
+      </section>
+
+      <section class="chapter flow-section">
+        <div class="chapter-copy">
+          <p class="eyebrow">01 · decision loop</p>
+          <h2>Each frame is a compact control problem.</h2>
+          <p>I give the network only velocity, the horizontal distance to the next gate, and the distance to each edge of that gap. Its single output is thresholded into a flap. The live lab shows these values and the exact topology for the current fitness leader.</p>
+        </div>
+        <figure>
+          <canvas id="decision-loop" width="620" height="330" aria-label="Sensors flow through an evolving network into the Flappy Bird environment"></canvas>
+          <figcaption>Four normalized observations → evolved network → one action → next frame.</figcaption>
+        </figure>
+      </section>
+
+      <section class="chapter reverse fitness-section">
+        <div class="chapter-copy">
+          <p class="eyebrow">02 · evaluation</p>
+          <h2>Fitness rewards progress, but survival still matters.</h2>
+          <p>All genomes receive the same deterministic pipe sequence. Remaining alive earns a small continuous reward; a clean gate pass earns a much larger bonus; collisions apply a small penalty. Holding the course fixed makes improvement in the first-gate rate meaningful rather than luck from easier pipes.</p>
+          <p class="note">The gold point is a hypothetical pipe pass. It is intentionally visible in the reward curve because it changes selection pressure.</p>
+        </div>
+        <figure>
+          <canvas id="fitness-model" width="620" height="330" aria-label="Fitness reward curve showing survival reward, pipe pass bonus, and collision penalty"></canvas>
+          <figcaption>Fitness accumulates every physics frame; passing a gate is the dominant signal.</figcaption>
+        </figure>
+      </section>
+
+      <section class="chapter topology-section">
+        <div class="chapter-copy">
+          <p class="eyebrow">03 · NEAT</p>
+          <h2>Evolution changes both weights and structure.</h2>
+          <p>NEAT starts with a sparse network. Better genomes reproduce, while compatible structures are grouped into species so new ideas are not immediately eliminated by already-optimized simple policies. Across generations, mutations can adjust a weight, add a connection, or insert a hidden node.</p>
+          <p>The lab’s Speciation and Structural mutation controls change these exact settings for future offspring: lower compatibility thresholds create more species, while higher structural rates explore architectures more aggressively.</p>
+        </div>
+        <figure>
+          <canvas id="topology-growth" width="620" height="330" aria-label="Sparse neural network gaining a hidden node and new connections"></canvas>
+          <figcaption>Teal connections are positive, coral connections are negative, and gold marks a structural innovation.</figcaption>
+        </figure>
+      </section>
+
+      <section class="closing">
+        <p class="eyebrow">Implementation</p>
+        <h2>A deliberately thin stack.</h2>
+        <div class="stack">
+          <p><strong>Canvas</strong><span>renders the game, telemetry, and network at display refresh rate.</span></p>
+          <p><strong>WebSocket</strong><span>streams compact population snapshots around 20 times a second.</span></p>
+          <p><strong>FastAPI + NEAT</strong><span>runs deterministic physics and incremental generations server-side.</span></p>
+        </div>
+        <a class="return-link" href="/">Return to the experiment <span>↗</span></a>
+      </section>
+    </main>
+    <script type="module" src="/method.js"></script>
+  </body>
+</html>
