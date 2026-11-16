@@ -68,6 +68,7 @@ async def evolution_session(websocket: WebSocket) -> None:
         return
 
 
-# Vercel serves this directory from its edge cache; the mount retains the same
-# zero-configuration paths for local FastAPI development.
-app.mount("/", StaticFiles(directory=PUBLIC, html=True), name="public")
+# Vercel serves ``public/`` from its edge cache and leaves it out of the
+# function bundle. Locally, FastAPI owns those same files for one-command dev.
+if PUBLIC.is_dir():
+    app.mount("/", StaticFiles(directory=PUBLIC, html=True), name="public")
