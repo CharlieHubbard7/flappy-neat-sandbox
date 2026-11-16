@@ -6,15 +6,20 @@ const status = document.querySelector("#game-status");
 const resetButton = document.querySelector("#reset");
 
 let socket;
+window.sandboxMode = "human";
 let bestScore = Number(localStorage.getItem("flappy-neat-best") || 0);
 best.textContent = bestScore;
 
 function connect() {
   socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/play`);
-  socket.addEventListener("message", ({ data }) => render(JSON.parse(data)));
+  socket.addEventListener("message", ({ data }) => {
+    if (window.sandboxMode === "human") render(JSON.parse(data));
+  });
   socket.addEventListener("close", () => {
-    status.textContent = "Reconnecting game server…";
-    setTimeout(connect, 800);
+    if (window.sandboxMode === "human") {
+      status.textContent = "Reconnecting game server…";
+      setTimeout(connect, 800);
+    }
   });
 }
 
@@ -23,11 +28,20 @@ function send(type) {
 }
 
 function flap() { send("flap"); }
-canvas.addEventListener("pointerdown", flap);
+canvas.addEventListener("pointerdown", () => { if (window.sandboxMode === "human") flap(); });
 window.addEventListener("keydown", (event) => {
-  if (event.code === "Space") { event.preventDefault(); flap(); }
+  if (window.sandboxMode === "human" && event.code === "Space") { event.preventDefault(); flap(); }
 });
 resetButton.addEventListener("click", () => send("reset"));
+
+window.addEventListener("sandboxmode", ({ detail }) => {
+  if (detail === "human") {
+    status.textContent = "Space or click to flap";
+    connect();
+  } else {
+    socket?.close();
+  }
+});
 
 function render(state) {
   context.clearRect(0, 0, canvas.width, canvas.height);

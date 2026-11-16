@@ -16,7 +16,10 @@
 
       <section class="game-card" aria-label="Flappy Bird game">
         <div class="game-toolbar">
-          <div class="mode-pill">Human play</div>
+          <div class="mode-switch" role="group" aria-label="Sandbox mode">
+            <button class="mode-button active" data-mode="human" type="button">Human</button>
+            <button class="mode-button" data-mode="evolution" type="button">Evolution</button>
+          </div>
           <div class="scoreboard">
             <span>Score <strong id="score">0</strong></span>
             <span>Best <strong id="best">0</strong></span>
@@ -25,17 +28,36 @@
         <canvas id="game" width="480" height="640" aria-label="Flappy Bird canvas"></canvas>
         <div class="game-footer">
           <span id="game-status">Press Space or click to flap</span>
-          <button id="reset" type="button">Reset run</button>
+          <div class="human-controls"><button id="reset" type="button">Reset run</button></div>
+          <div class="evolution-controls" hidden>
+            <button id="toggle" type="button">Pause</button>
+            <button class="speed active" data-speed="1" type="button">1×</button>
+            <button class="speed" data-speed="5" type="button">5×</button>
+            <button class="speed" data-speed="warp" type="button">Warp</button>
+            <button id="evolution-reset" type="button">Reset</button>
+          </div>
         </div>
       </section>
 
-      <aside class="coming-soon">
+      <aside class="evolution-panel">
         <div class="panel-label">EVOLUTION PANEL</div>
-        <h2>Neural topology</h2>
-        <p>Population telemetry, live network activations, and mutation history arrive with the NEAT runner.</p>
-        <div class="node-preview" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b><em></em></div>
+        <div class="telemetry">
+          <div><span>Generation</span><strong id="generation">—</strong></div>
+          <div><span>Alive</span><strong id="alive">—</strong></div>
+          <div><span>Species</span><strong id="species">—</strong></div>
+          <div><span>Best fitness</span><strong id="fitness">—</strong></div>
+        </div>
+        <div class="panel-heading"><h2>Leading topology</h2><span id="mutation-note">waiting for evolution</span></div>
+        <canvas id="network" width="440" height="290" aria-label="Leading neural network topology"></canvas>
+        <div class="panel-heading"><h2>Fitness history</h2><span>max / avg</span></div>
+        <canvas id="chart" width="440" height="105" aria-label="Fitness history chart"></canvas>
+        <div class="storage-controls">
+          <button id="save-champion" type="button">Save champion</button>
+          <button id="load-champion" type="button">Load champion</button>
+        </div>
       </aside>
     </main>
     <script type="module" src="/static/game.js"></script>
+    <script type="module" src="/static/evolution.js"></script>
   </body>
 </html>
