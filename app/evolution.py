@@ -194,10 +194,16 @@ class EvolutionRunner:
             "history": self.history,
             "pipes": [{"x": pipe.x, "gapY": pipe.gap_y} for pipe in pipe_source.pipes],
             "birds": [
-                {"y": agent.game.bird_y, "vy": agent.game.bird_vy, "leader": agent is leader}
+                {
+                    "id": agent.genome_id,
+                    "y": agent.game.bird_y,
+                    "vy": agent.game.bird_vy,
+                    "leader": agent is leader,
+                }
                 for agent in active
             ],
             "leader": {
+                "id": leader.genome_id,
                 "y": leader.game.bird_y,
                 "vy": leader.game.bird_vy,
                 "inputs": dict(zip(INPUT_NAMES, leader.inputs)),

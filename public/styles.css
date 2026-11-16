@@ -48,12 +48,15 @@ body[data-mode="evolution"] .playfield { grid-template-columns: minmax(0, 1fr) m
 .game-frame { min-width: 0; min-height: 0; display: grid; place-items: center; }
 #game { display: block; width: auto; max-width: 100%; height: 100%; max-height: 760px; border: 1px solid #887e7461; border-radius: 18px; background: #d9e0df; box-shadow: 0 18px 45px #4e3b2b20, 0 2px 5px #ffffff92 inset; cursor: pointer; touch-action: manipulation; }
 
-.inspector { min-width: 0; min-height: 0; align-self: center; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: clamp(10px, 1.7vh, 17px); }
-.ai-metrics { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
-.ai-metrics div:nth-child(2) { text-align: center; }.ai-metrics div:nth-child(3) { text-align: right; }
+.inspector { min-width: 0; min-height: 0; align-self: center; display: grid; grid-template-rows: auto auto minmax(120px, 1fr) auto; gap: clamp(9px, 1.35vh, 14px); }
+.ai-metrics { display: grid; grid-template-columns: repeat(5, 1fr); margin: 0; padding-bottom: 11px; border-bottom: 1px solid var(--line); }
+.ai-metrics div:nth-child(2), .ai-metrics div:nth-child(3), .ai-metrics div:nth-child(4) { text-align: center; }.ai-metrics div:nth-child(5) { text-align: right; }
 .ai-metrics dd { color: var(--blue); font-size: clamp(16px, 1.6vw, 22px); }
+.signal-grid { display: grid; grid-template-columns: repeat(5, 1fr); margin: 0; overflow: hidden; border: 1px solid #c8bdb2; border-radius: 12px; background: #f4efe8a8; }
+.signal-grid div { min-width: 0; padding: 8px 7px; border-right: 1px solid #d4c9be; }.signal-grid div:last-child { border-right: 0; }
+.signal-grid dd { overflow: hidden; font-size: 12px; text-overflow: ellipsis; }.signal-grid .decision { color: #fff9f0; background: var(--blue); }.signal-grid .decision dt { color: #dce9ed; }.signal-grid .decision dd { color: inherit; }
 #network, #chart { display: block; width: 100%; border: 1px solid #c8bdb2; border-radius: 12px; background: #f4efe8a8; }
-#network { align-self: stretch; min-height: 170px; max-height: 340px; } #chart { height: auto; }
+#network { align-self: stretch; min-height: 150px; max-height: 290px; } #chart { height: auto; }
 
 @media (max-width: 720px) {
   .app-shell { padding: 13px; }.topbar { grid-template-columns: 1fr auto; gap: 10px; }.headline-metrics { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; justify-content: space-between; padding-top: 4px; }.headline-metrics div[hidden] { display: none; }
@@ -62,5 +65,5 @@ body[data-mode="evolution"] .playfield { grid-template-columns: minmax(0, 1fr) m
 }
 
 @media (max-height: 580px) and (min-width: 721px) {
-  .app-shell { padding-block: 10px; gap: 9px; }.inspector { gap: 8px; } #network { min-height: 120px; } .ai-metrics { padding-bottom: 7px; }
+  .app-shell { padding-block: 10px; gap: 9px; }.inspector { gap: 7px; } #network { min-height: 110px; } .ai-metrics { padding-bottom: 6px; }.signal-grid div { padding-block: 5px; }
 }

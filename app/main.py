@@ -55,15 +55,15 @@ async def evolution_session(websocket: WebSocket) -> None:
     try:
         while True:
             try:
-                await asyncio.wait_for(websocket.receive_json(), timeout=1 / 12)
+                await asyncio.wait_for(websocket.receive_json(), timeout=1 / 20)
             except TimeoutError:
                 pass
 
-            # Simulate several deterministic frames between visual updates. The
-            # browser sees a calm 12 Hz stream while evolution still advances.
-            runner.tick(6)
+            # Small, regular updates let the browser interpolate at display
+            # refresh rate without sending every physics tick across the wire.
+            runner.tick(3)
             updates += 1
-            await websocket.send_json({"type": "state", **runner.snapshot(include_graph=updates % 6 == 1)})
+            await websocket.send_json({"type": "state", **runner.snapshot(include_graph=updates % 10 == 1)})
     except WebSocketDisconnect:
         return
 

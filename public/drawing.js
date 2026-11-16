@@ -7,11 +7,6 @@ export function drawSky(context, canvas) {
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   context.save();
-  context.globalAlpha = .32;
-  context.fillStyle = "#efb99c";
-  context.beginPath();
-  context.arc(canvas.width - 82, 93, 38, 0, Math.PI * 2);
-  context.fill();
   context.globalAlpha = .23;
   context.fillStyle = "#f8f4ea";
   context.fillRect(0, canvas.height - 83, canvas.width, 2);
@@ -55,14 +50,6 @@ export function drawBird(context, x, y, velocity, { color = "#cf765f", opacity =
   context.globalAlpha = opacity;
   context.translate(x, y);
   context.rotate(Math.max(-.42, Math.min(.55, velocity / 760)));
-  if (leader) {
-    context.globalAlpha = opacity * .14;
-    context.fillStyle = "#315f86";
-    context.beginPath();
-    context.arc(0, 0, 25, 0, Math.PI * 2);
-    context.fill();
-    context.globalAlpha = opacity;
-  }
   context.fillStyle = color;
   context.beginPath();
   context.ellipse(0, 0, 15, 13, 0, 0, Math.PI * 2);

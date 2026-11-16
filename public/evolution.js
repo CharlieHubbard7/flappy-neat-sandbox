@@ -11,15 +11,21 @@ const labels = [document.querySelector("#metric-one-label"), document.querySelec
 const values = [document.querySelector("#metric-one-value"), document.querySelector("#metric-two-value"), document.querySelector("#metric-three-value"), document.querySelector("#metric-four-value")];
 const third = document.querySelector("#metric-three");
 const fourth = document.querySelector("#metric-four");
-const telemetry = Object.fromEntries(["generation", "alive", "first-gate"].map((name) => [name, document.querySelector(`#${name}`)]));
+const telemetry = Object.fromEntries(["generation", "alive", "first-gate", "nodes", "edges"].map((name) => [name, document.querySelector(`#${name}`)]));
+const sensors = Object.fromEntries([["vy", "input-vy"], ["dx", "input-dx"], ["dy_top", "input-top"], ["dy_bottom", "input-bottom"]].map(([name, id]) => [name, document.querySelector(`#${id}`)]));
+const jumpOutput = document.querySelector("#jump-output");
 
+const INTERPOLATION_MS = 58;
 let socket;
 let reconnectTimer;
-let latest;
+let sourceState;
+let targetState;
+let receivedAt = 0;
 let graph;
-let lastChartGeneration = -1;
+let lastHistoryLength = -1;
 
 function socketUrl(path) { return `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}${path}`; }
+function lerp(from, to, amount) { return from + (to - from) * amount; }
 
 function setMode(mode) {
   if (document.body.dataset.mode === mode) return;
@@ -34,20 +40,17 @@ function setMode(mode) {
   });
   window.dispatchEvent(new CustomEvent("sandboxmode", { detail: mode }));
   if (mode === "evolution") connect();
-  else close();
+  else {
+    close();
+    labels.forEach((label, index) => { label.textContent = ["score", "best", "species", "fitness"][index]; });
+  }
 }
 
 function connect() {
   if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) return;
   clearTimeout(reconnectTimer);
   socket = new WebSocket(socketUrl("/ws/evolution"));
-  socket.addEventListener("message", ({ data }) => {
-    const message = JSON.parse(data);
-    if (message.type !== "state" || document.body.dataset.mode !== "evolution") return;
-    latest = message;
-    if (message.graph) graph = message.graph;
-    render();
-  });
+  socket.addEventListener("message", ({ data }) => receive(JSON.parse(data)));
   socket.addEventListener("close", () => {
     if (document.body.dataset.mode === "evolution") reconnectTimer = setTimeout(connect, 700);
   });
@@ -59,21 +62,77 @@ function close() {
   socket = undefined;
 }
 
-function render() {
-  if (!latest) return;
+function receive(message) {
+  if (message.type !== "state" || document.body.dataset.mode !== "evolution") return;
+  const now = performance.now();
+  sourceState = targetState ? interpolatedState(now) : message;
+  targetState = message;
+  receivedAt = now;
+  if (message.graph) graph = message.graph;
+  updateMetrics(message);
+  if (message.graph) drawNetwork(graph, message.leader.output);
+  if (lastHistoryLength !== message.history.length) {
+    drawChart(message.history);
+    lastHistoryLength = message.history.length;
+  }
+}
+
+function interpolatedState(now) {
+  if (!sourceState || !targetState) return targetState || sourceState;
+  const amount = Math.min(1, (now - receivedAt) / INTERPOLATION_MS);
+  const previousBirds = new Map(sourceState.birds.map((bird) => [bird.id, bird]));
+  const birds = targetState.birds.map((bird) => {
+    const previous = previousBirds.get(bird.id) || bird;
+    return { ...bird, y: lerp(previous.y, bird.y, amount), vy: lerp(previous.vy, bird.vy, amount) };
+  });
+  const pipes = targetState.pipes.map((pipe, index) => {
+    const previous = sourceState.pipes[index] || pipe;
+    return { ...pipe, x: lerp(previous.x, pipe.x, amount), gapY: lerp(previous.gapY, pipe.gapY, amount) };
+  });
+  const previousLeader = previousBirds.get(targetState.leader.id) || sourceState.leader || targetState.leader;
+  return {
+    ...targetState,
+    birds,
+    pipes,
+    leader: {
+      ...targetState.leader,
+      y: lerp(previousLeader.y, targetState.leader.y, amount),
+      vy: lerp(previousLeader.vy, targetState.leader.vy, amount),
+    },
+  };
+}
+
+function animate(now) {
+  if (document.body.dataset.mode === "evolution" && targetState) {
+    const state = interpolatedState(now);
+    drawWorld(state);
+    if (graph) drawNetwork(graph, state.leader.output);
+  }
+  requestAnimationFrame(animate);
+}
+
+function drawWorld(state) {
   drawSky(context, canvas);
-  latest.pipes.forEach((pipe) => drawPipe(context, canvas, pipe));
-  latest.birds.forEach((bird) => drawBird(context, 130, bird.y, bird.vy, { color: bird.leader ? "#315f86" : "#c97763", opacity: bird.leader ? 1 : .19, leader: bird.leader }));
-  updateMetrics(latest);
-  if (graph) drawNetwork(graph, latest.leader.output);
-  if (lastChartGeneration !== latest.history.length) { drawChart(latest.history); lastChartGeneration = latest.history.length; }
+  state.pipes.forEach((pipe) => drawPipe(context, canvas, pipe));
+  state.birds.forEach((bird) => drawBird(context, 130, bird.y, bird.vy, {
+    color: bird.leader ? "#315f86" : "#c97763",
+    opacity: bird.leader ? 1 : .22,
+    leader: bird.leader,
+  }));
 }
 
 function updateMetrics(state) {
-  [["generation", state.generation], ["alive", `${state.alive}/${state.population}`], ["species", state.species], ["fitness", state.bestFitness.toFixed(1)]].forEach(([label, value], index) => { labels[index].textContent = label; values[index].textContent = value; });
+  [["generation", state.generation], ["alive", `${state.alive}/${state.population}`], ["species", state.species], ["fitness", state.bestFitness.toFixed(1)]].forEach(([label, value], index) => {
+    labels[index].textContent = label;
+    values[index].textContent = value;
+  });
   telemetry.generation.textContent = state.generation;
   telemetry.alive.textContent = `${state.alive}/${state.population}`;
   telemetry["first-gate"].textContent = `${state.lastFirstGate || state.passedFirstGate}/${state.population}`;
+  telemetry.nodes.textContent = graph ? graph.nodes.length : "—";
+  telemetry.edges.textContent = graph ? graph.connections.length : "—";
+  Object.entries(state.leader.inputs).forEach(([name, value]) => { sensors[name].textContent = Number(value).toFixed(2); });
+  jumpOutput.textContent = state.leader.output.toFixed(2);
 }
 
 function drawNetwork(state, output) {
@@ -120,3 +179,4 @@ function drawChart(history) {
 }
 
 document.querySelectorAll(".mode-button").forEach((button) => button.addEventListener("click", () => setMode(button.dataset.mode)));
+requestAnimationFrame(animate);
