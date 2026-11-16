@@ -7,6 +7,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from .evolution import EvolutionRunner
 from .game import FlappyGame
 
 ROOT = Path(__file__).parent
@@ -39,5 +40,35 @@ async def play_session(websocket: WebSocket) -> None:
 
             game.step(frame_time, flap)
             await websocket.send_json(game.snapshot())
+    except WebSocketDisconnect:
+        return
+
+
+@app.websocket("/ws/evolution")
+async def evolution_session(websocket: WebSocket) -> None:
+    await websocket.accept()
+    runner = EvolutionRunner()
+    frames_per_tick = 1
+
+    try:
+        while True:
+            try:
+                message = await asyncio.wait_for(websocket.receive_json(), timeout=1 / 30)
+                kind = message.get("type")
+                if kind == "toggle":
+                    runner.paused = not runner.paused
+                elif kind == "speed":
+                    frames_per_tick = {"1": 1, "5": 5, "warp": 1_500}.get(message.get("value"), 1)
+                elif kind == "reset":
+                    runner.reset()
+                elif kind == "save":
+                    await websocket.send_json({"type": "saved", "ok": runner.save_champion()})
+                elif kind == "load":
+                    await websocket.send_json({"type": "loaded", "ok": runner.load_champion()})
+            except TimeoutError:
+                pass
+
+            runner.tick(frames_per_tick)
+            await websocket.send_json({"type": "state", **runner.snapshot()})
     except WebSocketDisconnect:
         return
