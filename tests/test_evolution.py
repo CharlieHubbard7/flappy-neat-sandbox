@@ -28,6 +28,14 @@ class EvolutionRunnerTests(unittest.TestCase):
         self.assertNotIn("graph", state)
         self.assertEqual(state["population"], 50)
 
+    def test_tuning_updates_real_neat_configuration(self) -> None:
+        runner = EvolutionRunner()
+        runner.tune(species="diverse", mutation="exploratory")
+
+        self.assertEqual(runner.config.species_set_config.compatibility_threshold, 1.8)
+        self.assertEqual(runner.config.genome_config.conn_add_prob, 0.30)
+        self.assertEqual(runner.config.genome_config.node_add_prob, 0.18)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -51,17 +51,23 @@ async def evolution_session(websocket: WebSocket) -> None:
     await websocket.accept()
     runner = EvolutionRunner()
     updates = 0
+    frames_per_tick = 3
 
     try:
         while True:
             try:
-                await asyncio.wait_for(websocket.receive_json(), timeout=1 / 20)
+                message = await asyncio.wait_for(websocket.receive_json(), timeout=1 / 20)
+                kind = message.get("type")
+                if kind == "speed":
+                    frames_per_tick = {"1": 3, "4": 12, "12": 36}.get(message.get("value"), 3)
+                elif kind == "tune":
+                    runner.tune(species=message.get("species"), mutation=message.get("mutation"))
             except TimeoutError:
                 pass
 
             # Small, regular updates let the browser interpolate at display
             # refresh rate without sending every physics tick across the wire.
-            runner.tick(3)
+            runner.tick(frames_per_tick)
             updates += 1
             await websocket.send_json({"type": "state", **runner.snapshot(include_graph=updates % 10 == 1)})
     except WebSocketDisconnect:

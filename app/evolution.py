@@ -47,6 +47,7 @@ class EvolutionRunner:
         self._known_nodes: set[int] = set()
         self._known_connections: set[tuple[int, int]] = set()
         self._elapsed = 0.0
+        self.pipe_pass_bonus = 20.0
         self._start_generation()
 
     @property
@@ -55,6 +56,21 @@ class EvolutionRunner:
 
     def reset(self) -> None:
         self.__init__(self.seed)
+
+    def tune(self, *, species: str | None = None, mutation: str | None = None) -> None:
+        """Apply safe live settings; structural changes affect later offspring."""
+        if species:
+            threshold = {"stable": 3.2, "balanced": 2.5, "diverse": 1.8}.get(species)
+            if threshold is not None:
+                self.config.species_set_config.compatibility_threshold = threshold
+        if mutation:
+            rates = {
+                "conservative": (0.08, 0.04),
+                "balanced": (0.18, 0.10),
+                "exploratory": (0.30, 0.18),
+            }.get(mutation)
+            if rates is not None:
+                self.config.genome_config.conn_add_prob, self.config.genome_config.node_add_prob = rates
 
     def tick(self, frames: int = 1) -> None:
         if self.paused:
@@ -93,7 +109,7 @@ class EvolutionRunner:
         agent.fitness += 1 / 60
         if agent.game.score > score_before:
             # A pipe pass should outweigh several seconds of cautious stalling.
-            agent.fitness += 20
+            agent.fitness += self.pipe_pass_bonus
         target_y = self._next_gap_center(agent.game)
         agent.fitness += 0.008 * (1 - abs(agent.game.bird_y - target_y) / agent.game.config.height)
         if not agent.game.alive:
@@ -189,6 +205,7 @@ class EvolutionRunner:
             "population": self.config.pop_size,
             "species": len(self.population.species.species),
             "bestFitness": round(max(agent.fitness for agent in self.agents), 3),
+            "averageFitness": round(float(np.mean([agent.fitness for agent in self.agents])), 3),
             "passedFirstGate": sum(agent.game.score >= 1 for agent in self.agents),
             "lastFirstGate": self.history[-1]["firstGate"] if self.history else 0,
             "history": self.history,
@@ -208,6 +225,11 @@ class EvolutionRunner:
                 "vy": leader.game.bird_vy,
                 "inputs": dict(zip(INPUT_NAMES, leader.inputs)),
                 "output": leader.output,
+            },
+            "settings": {
+                "speciesThreshold": self.config.species_set_config.compatibility_threshold,
+                "connectionMutation": self.config.genome_config.conn_add_prob,
+                "nodeMutation": self.config.genome_config.node_add_prob,
             },
         }
         if include_graph:

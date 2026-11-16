@@ -14,6 +14,9 @@ const fourth = document.querySelector("#metric-four");
 const telemetry = Object.fromEntries(["generation", "alive", "first-gate", "nodes", "edges"].map((name) => [name, document.querySelector(`#${name}`)]));
 const sensors = Object.fromEntries([["vy", "input-vy"], ["dx", "input-dx"], ["dy_top", "input-top"], ["dy_bottom", "input-bottom"]].map(([name, id]) => [name, document.querySelector(`#${id}`)]));
 const jumpOutput = document.querySelector("#jump-output");
+const simulationRate = document.querySelector("#simulation-rate");
+const speciation = document.querySelector("#speciation");
+const mutation = document.querySelector("#mutation");
 
 const INTERPOLATION_MS = 58;
 let socket;
@@ -22,7 +25,7 @@ let sourceState;
 let targetState;
 let receivedAt = 0;
 let graph;
-let lastHistoryLength = -1;
+let lastChartKey = "";
 
 function socketUrl(path) { return `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}${path}`; }
 function lerp(from, to, amount) { return from + (to - from) * amount; }
@@ -49,11 +52,24 @@ function setMode(mode) {
 function connect() {
   if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) return;
   clearTimeout(reconnectTimer);
+  sourceState = undefined;
+  targetState = undefined;
+  graph = undefined;
+  lastChartKey = "";
   socket = new WebSocket(socketUrl("/ws/evolution"));
+  socket.addEventListener("open", () => {
+    send("speed", { value: simulationRate.value });
+    send("tune", { species: speciation.value, mutation: mutation.value });
+  });
   socket.addEventListener("message", ({ data }) => receive(JSON.parse(data)));
   socket.addEventListener("close", () => {
     if (document.body.dataset.mode === "evolution") reconnectTimer = setTimeout(connect, 700);
   });
+}
+
+function send(type, data) {
+  if (socket?.readyState !== WebSocket.OPEN) return;
+  socket.send(JSON.stringify({ type, ...data }));
 }
 
 function close() {
@@ -71,9 +87,10 @@ function receive(message) {
   if (message.graph) graph = message.graph;
   updateMetrics(message);
   if (message.graph) drawNetwork(graph, message.leader.output);
-  if (lastHistoryLength !== message.history.length) {
-    drawChart(message.history);
-    lastHistoryLength = message.history.length;
+  const chartKey = `${message.history.length}:${Math.floor(message.bestFitness)}`;
+  if (lastChartKey !== chartKey) {
+    drawChart(message.history, message);
+    lastChartKey = chartKey;
   }
 }
 
@@ -115,8 +132,8 @@ function drawWorld(state) {
   drawSky(context, canvas);
   state.pipes.forEach((pipe) => drawPipe(context, canvas, pipe));
   state.birds.forEach((bird) => drawBird(context, 130, bird.y, bird.vy, {
-    color: bird.leader ? "#315f86" : "#c97763",
-    opacity: bird.leader ? 1 : .22,
+    color: bird.leader ? "#4f8178" : "#c97763",
+    opacity: bird.leader ? .72 : .2,
     leader: bird.leader,
   }));
 }
@@ -144,6 +161,11 @@ function drawNetwork(state, output) {
   inputs.forEach((node, index) => positions.set(node, { x: 36, y: 38 + index * ((height - 76) / 3) }));
   hidden.forEach((node, index) => positions.set(node, { x: width / 2, y: height / 2 + (index - (hidden.length - 1) / 2) * Math.min(44, (height - 82) / Math.max(1, hidden.length)) }));
   positions.set(0, { x: width - 36, y: height / 2 });
+  network.fillStyle = "#8a8075";
+  network.font = "700 8px ui-sans-serif, system-ui, sans-serif";
+  network.fillText("SENSORS", 14, 16);
+  network.fillText("HIDDEN", width / 2 - 18, 16);
+  network.fillText("ACTION", width - 58, 16);
   const newEdges = new Set(state.newConnections.map((edge) => edge.join(":")));
   state.connections.forEach((edge) => {
     const from = positions.get(edge.from); const to = positions.get(edge.to); if (!from || !to) return;
@@ -159,24 +181,37 @@ function drawNetwork(state, output) {
     const activeOutput = node === 0 && output > .5;
     network.fillStyle = activeOutput ? "#315f86" : `rgba(79, 129, 120, ${.22 + activation * .72})`;
     network.beginPath(); network.arc(point.x, point.y, activeOutput ? 10 : 8, 0, Math.PI * 2); network.fill();
+    network.fillStyle = "#746b62";
+    network.font = "600 8px ui-sans-serif, system-ui, sans-serif";
+    const label = inputs.includes(node) ? ["vy", "dx", "top", "bottom"][inputs.indexOf(node)] : node === 0 ? "flap" : `h${node}`;
+    network.fillText(label, node === 0 ? point.x - 13 : point.x + 12, point.y + 3);
   });
 }
 
-function drawChart(history) {
+function drawChart(history, current) {
   const { width, height } = chartCanvas;
   chart.clearRect(0, 0, width, height);
-  if (history.length < 2) return;
-  const ceiling = Math.max(1, ...history.flatMap((point) => [point.max, point.avg]));
+  const points = [...history, { max: current.bestFitness, avg: current.averageFitness }];
+  const ceiling = Math.max(1, ...points.flatMap((point) => [point.max, point.avg]));
+  chart.strokeStyle = "#d6ccc0";
+  chart.lineWidth = 1;
+  [0.25, 0.5, 0.75].forEach((ratio) => { chart.beginPath(); chart.moveTo(10, height * ratio); chart.lineTo(width - 10, height * ratio); chart.stroke(); });
   [["max", "#315f86"], ["avg", "#9a8c7d"]].forEach(([key, color]) => {
     chart.strokeStyle = color; chart.lineWidth = 1.6; chart.beginPath();
-    history.forEach((point, index) => {
-      const x = 10 + (index / (history.length - 1)) * (width - 20);
+    points.forEach((point, index) => {
+      const x = points.length === 1 ? width / 2 : 10 + (index / (points.length - 1)) * (width - 20);
       const y = height - 10 - (point[key] / ceiling) * (height - 20);
       index ? chart.lineTo(x, y) : chart.moveTo(x, y);
     });
     chart.stroke();
+    if (points.length === 1) {
+      const y = height - 10 - (points[0][key] / ceiling) * (height - 20);
+      chart.fillStyle = color; chart.beginPath(); chart.arc(width / 2, y, 3, 0, Math.PI * 2); chart.fill();
+    }
   });
 }
 
 document.querySelectorAll(".mode-button").forEach((button) => button.addEventListener("click", () => setMode(button.dataset.mode)));
+simulationRate.addEventListener("change", () => send("speed", { value: simulationRate.value }));
+[speciation, mutation].forEach((control) => control.addEventListener("change", () => send("tune", { species: speciation.value, mutation: mutation.value })));
 requestAnimationFrame(animate);
