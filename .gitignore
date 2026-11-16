@@ -4,3 +4,4 @@ __pycache__/
 .env
 champion.pkl
 .DS_Store
+.vercel
