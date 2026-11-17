@@ -1,153 +1,44 @@
-# Flappy, evolved.
+# Flappy, evolved
 
-An interactive Flappy Bird sandbox where you can fly the course yourself, then
-watch a population of neural networks learn it in real time.
+A Flappy Bird clone you can play yourself, or watch a population of neural networks learn with NEAT (NeuroEvolution of Augmenting Topologies).
 
-The goal is not just to show a score climbing. The Evolution Lab makes the
-learning process legible: bird vision, species count, topology growth,
-connection weights, node activations, jump decisions, and first-gate pass rate
-all update from the active simulation.
+**Live:** [project-flappy-bird-neat-evolution.vercel.app](https://project-flappy-bird-neat-evolution.vercel.app). A [method page](https://project-flappy-bird-neat-evolution.vercel.app/method.html) walks through how NEAT works.
 
-## Portfolio summary
+## What you can do
 
-I built AI Flappy Bird as a compact way to make neuroevolution feel tangible.
-Rather than presenting NEAT as an opaque training job with a final score, I
-made the simulation itself the interface: visitors can fly the exact course
-with the same physics, switch to AI mode, and watch a population of small
-networks make the same decision in parallel.
+- **Fly it yourself.** The human mode runs entirely in the browser, at a fixed 60 Hz physics step, and remembers your best score.
+- **Watch 50 birds evolve.** In AI mode, each bird is a NEAT genome. They all fly the same course at once, and the side panel shows:
+  - generation, birds alive, species count, best and average fitness, and how many birds passed the first gate;
+  - the leading bird's live inputs and jump output;
+  - its actual network, drawn from the genome with weights colored by sign and sized by magnitude. New connections are highlighted when they appear.
+- **Change the run as it goes:**
+  - simulation speed (1×, 4× or 12×);
+  - how strictly birds are grouped into species (the compatibility threshold);
+  - how often new connections and nodes are added.
 
-The project is deliberately split between an immediate, browser-native Human
-mode and an on-demand Python evolution service. That keeps the first
-interaction fast while preserving a real, inspectable training loop once AI
-mode is selected.
+## The model
 
-### How it works
+| | |
+|---|---|
+| Population | 50 genomes ([`app/neat_config.ini`](app/neat_config.ini), tanh activations) |
+| Inputs | vertical velocity, horizontal distance to the next pipe, distance to the top and bottom of the gap (normalized) |
+| Output | one value; the bird flaps when it is above 0.5 |
+| Fitness | +1 per second survived, +20 per pipe passed, a small bonus for staying near the gap center, and a penalty for crashing |
 
-#### A deterministic shared world
+The pipe sequence is seeded and the same every generation, and the first gap is centered. Changes in first-gate pass rate therefore reflect learning, not an easier course.
 
-Both modes use the same 480 × 640 course, fixed timestep, gravity, flap force,
-pipe spacing, collision radius, and seeded pipe sequence. The first gate is
-centered so every run has a readable opening condition. Later gates use the
-same seeded variation every generation; that makes metrics such as first-gate
-pass rate comparable instead of letting a fortunate pipe layout look like
-learning.
+## How it's built
 
-Human mode runs entirely in the browser. A `requestAnimationFrame` loop drives
-the Canvas renderer while a fixed 60 Hz physics step keeps input responsive and
-reproducible. The player’s personal best lives in local storage. No request is
-made to the Python service until AI mode is selected.
+- **Backend:** Python, running `neat-python` and the game physics in FastAPI. The browser connects over a WebSocket, and the server sends state about 20 times a second, advancing several physics frames per update. The network drawing is sent on every tenth update because it changes slowly. The browser interpolates between updates, so motion stays smooth.
+- **Frontend:** plain HTML, CSS and Canvas 2D, in [`public/`](public/).
+- **Deployment:** Vercel serves `public/` as static files, and [`api/index.py`](api/index.py) exposes the FastAPI app as a serverless function. Each evolution run belongs to one WebSocket connection, so it isn't saved anywhere.
+- **Persistent hosting:** a `Dockerfile` and `render.yaml` are included for running it as a long-lived service.
 
-#### The evolving policy
-
-AI mode creates a population of 50 NEAT genomes. Each genome controls one bird
-through four normalized inputs: vertical velocity (`vy`), horizontal distance
-to the next pipe (`dx`), clearance to the upper edge (`dy top`), and clearance
-to the lower edge (`dy bottom`). Its single output is the jump signal. When
-that output crosses 0.5, the bird flaps.
-
-Fitness combines survival time, a small reward for staying near the next gap
-center, and a much larger reward for passing a pipe. The large pipe-pass bonus
-prevents a cautious bird that merely survives near the first gate from being
-mistaken for a successful policy. At the end of each generation, NEAT selects
-and crosses successful genomes, mutates weights and structure, and uses
-speciation to protect new structures long enough to demonstrate whether they
-help.
-
-#### Making the model legible
-
-The right-hand panel reports the population state—generation, surviving birds,
-species, fitness, first-gate passes, active nodes, and enabled connections. It
-also shows the leading bird’s live sensor values and jump output. The topology
-view is not a mock-up: it is built from the leader’s actual genome. Teal edges
-are positive weights, coral edges are negative weights, line thickness follows
-weight magnitude, and gold briefly marks a new connection.
-
-The backend advances three physics frames per visual update and sends compact
-state packets at roughly 20 Hz. The browser interpolates each bird and pipe
-between those packets at display refresh rate, so the canvas remains smooth
-without streaming every physics frame or redrawing a large network payload on
-every tick. Topology data arrives less frequently than position data because it
-changes much less often.
-
-#### Deployment model
-
-The interface lives in `public/`, which Vercel serves as static assets. The
-Python entry point is a small FastAPI serverless function used only for health
-checks and the `/ws/evolution` WebSocket. The NEAT engine is imported lazily
-after the visitor chooses AI mode, avoiding that cost for Human Play. An active
-evolution session is intentionally ephemeral: it belongs to that WebSocket
-connection, so long-running shared training or durable champion storage would
-be the next step for a persistent backend deployment.
-
-## Highlights
-
-- Clean, deterministic Flappy Bird physics running at 60 FPS.
-- Human Flight mode with Space/click controls, a deliberate launch state, and
-  persistent personal bests.
-- NEAT population of 50 birds, rendered together against the same course.
-- Live topology renderer for the leading genome, including activations,
-  connection sign/strength, structural mutations, and jump threshold.
-- Stable training course and centered first gate so progress is comparable from
-  generation to generation.
-- `1×`, `5×`, and Warp simulation controls plus champion save/load.
-
-## Architecture
-
-The backend is a deliberately small FastAPI service. It owns deterministic
-physics and NEAT evaluation, then streams compact JSON state over WebSockets.
-The frontend is dependency-free HTML, CSS, and Canvas 2D. This keeps the
-visualization smooth without adding a client framework or a rendering engine.
-
-## Run locally
+## Run it
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload            # http://127.0.0.1:8000
+python -m unittest discover -s tests     # 9 tests
 ```
-
-Open `http://127.0.0.1:8000`.
-
-## Verify
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-## Deploy on Vercel
-
-The repository is ready to import into Vercel. It uses Vercel's native FastAPI
-runtime: there is no build command to configure and the application entry point
-is the thin `api/index.py` adapter, which imports the same `app.main:app` ASGI
-application used locally.
-
-1. In Vercel, choose **Add New → Project** and import
-   `CharlieHubbard7/flappy-neat-sandbox`.
-2. Leave the detected FastAPI settings unchanged and deploy. The included
-   native Python discovery includes the Canvas assets and NEAT config.
-3. After deployment, open `/health` to confirm the service is live.
-
-Or deploy from the repository root with the Vercel CLI:
-
-```bash
-vercel --prod
-```
-
-The game connects over secure WebSockets automatically when it is served over
-HTTPS. Vercel is excellent for sharing the portfolio experience, but its
-serverless runtime is intentionally short-lived: an active simulation can be
-restarted by the platform and champion files are not durable across function
-restarts. For persistent champions or uninterrupted long-running training, use
-the included container deployment described below.
-
-## Deploy as a persistent service
-
-The repository includes both a `Dockerfile` and `render.yaml` for a straightforward
-web-service deployment. For Render, connect this GitHub repository and deploy
-the Blueprint. The application binds to the host-provided `PORT`, exposes a
-`/health` endpoint, and serves HTTP plus WebSockets from the same service.
-
-For a portfolio deployment, use a single application worker first. Each active
-Evolution Lab session runs a real 50-agent simulation, so capacity should be
-measured before increasing worker count or allowing unbounded Warp usage.
