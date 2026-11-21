@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>How Flappy NEAT works</title>
-    <meta name="description" content="How the Flappy NEAT birds see, decide and evolve." />
+    <meta name="description" content="How the Flappy NEAT birds see, decide and evolve, and why Flappy Bird is a weak test of NEAT." />
     <meta name="theme-color" content="#0a0a0a" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a0a0a'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23c8ff2e'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="/style.css" />
@@ -18,14 +18,15 @@
     <main class="doc-main">
       <section class="doc-hero">
         <h1>How the birds learn</h1>
-        <p>There's no training data and no gradient descent here. Each bird is a small neural network described by a genome. The whole population flies the same course, the ones that get furthest have more children, and the children come out slightly different. Repeat that a few dozen times and you get birds that can fly. The method is NEAT (Stanley and Miikkulainen, 2002), and all of it runs in your browser.</p>
+        <p>Every bird in the Evolve tab is a small neural network, and none of them is trained in the usual sense, because there is no dataset, no loss function and no gradient anywhere in the code. Instead the whole population flies the same course, the birds that get furthest have more children, and those children differ slightly from their parents in their weights and occasionally in their wiring. The method is NEAT, which Kenneth Stanley and Risto Miikkulainen published in 2002, and with 50 birds it produced a bird that clears all 100 pipes in a median of 10 generations across 20 test runs, which takes under two seconds at Max speed.</p>
+        <p>The last two sections argue that this result says less about NEAT than it seems to, because Flappy Bird as it is built here is deterministic and fully visible to the bird, which makes it close to the easiest problem you could hand the algorithm.</p>
       </section>
 
       <section class="doc-row">
         <div>
           <h2>What a bird sees</h2>
-          <p>Four numbers, every frame: how far it is above or below the next gap, how fast it's moving up or down, how far it still has to go to clear the next pipe, and where the gap after that one is. That last one turned out to matter once the gaps get tight, because a bird that only knows about the next gap tends to come out of it heading the wrong way.</p>
-          <p>The network has one output. If it's above 0.5, the bird flaps.</p>
+          <p>Each bird decides whether to flap on every frame using four numbers, which are its height relative to the centre of the next gap, its vertical speed, the horizontal distance left before it clears the next pipe, and its height relative to the gap after that. I added the fourth input after watching birds thread one gap and then leave it heading steeply the wrong way, since a bird that only knows about the next gap has no reason to set itself up for the one after.</p>
+          <p>All four values are scaled to fall roughly between minus one and one, and the network's single output goes through a sigmoid, so the bird flaps on any frame where that output is above 0.5. As it turns out, the first of these four numbers carries nearly everything a bird needs to know, which becomes important later on.</p>
         </div>
         <figure class="doc-figure">
           <svg viewBox="0 0 420 300" role="img" aria-label="A bird with a line to the centre of the next gap">
@@ -39,18 +40,19 @@
             <text x="120" y="142">gap</text>
             <text x="300" y="108">next gap</text>
           </svg>
-          <figcaption>The lime line is the one you see on the leading bird in Evolve.</figcaption>
+          <figcaption>The lime line is the same one drawn on the leading bird in the Evolve tab.</figcaption>
         </figure>
       </section>
 
       <section class="doc-row">
         <div>
           <h2>Networks that grow</h2>
-          <p>Every bird starts as the simplest possible network, with the four inputs wired straight to the output. When a bird has children, most of them get their weights nudged. About one in seven also gets a new connection, and about one in seventeen gets a new hidden node, which is added by splitting an existing connection in two.</p>
-          <p>Each new connection gets a number that's shared across the whole run, so if two birds happen to grow the same connection, it has the same number in both. That's what lets two differently shaped parents have a child that makes sense: their genes line up by number.</p>
+          <p>Every bird in the first generation starts with the simplest network possible, in which the four inputs connect straight to the output with random weights and there are no hidden nodes at all. When a bird has children, each of a child's weights has an 80% chance of being nudged, roughly one child in seven gains a new connection, and about one in seventeen gains a new hidden node. NEAT adds that node by splitting an existing connection in two, so the child behaves almost exactly like its parent until later mutations put the new node to use.</p>
+          <p>Every new connection also receives a number that is shared across the whole run, so if two unrelated birds happen to grow the same connection it carries the same number in both. That shared numbering is what lets crossover line up the genes of two differently shaped parents and still produce a child that makes sense, which was one of the main obstacles to evolving network structure before NEAT.</p>
         </div>
         <figure class="doc-figure">
           <svg viewBox="0 0 420 300" role="img" aria-label="A list of genes next to the network they describe, with one connection split by a new node">
+            <g class="genes">
             <text x="20" y="44" class="head">#   from → to      weight</text>
             <text x="20" y="74">0   gap → flap       2.1</text>
             <text x="20" y="98">1   speed → flap    −1.4</text>
@@ -58,6 +60,7 @@
             <text x="20" y="146">3   next → flap      0.3</text>
             <text x="20" y="170" class="new">7   pipe → new       1.0</text>
             <text x="20" y="194" class="new">8   new → flap       0.6</text>
+            </g>
             <g transform="translate(240 50)">
               <line class="ln" x1="0" y1="10" x2="140" y2="100" />
               <line class="ln dash" x1="0" y1="70" x2="140" y2="100" />
@@ -73,33 +76,33 @@
               <circle class="node" cx="140" cy="100" r="4" />
             </g>
           </svg>
-          <figcaption>Gene 2 gets split by a new node. It's switched off, and 7 and 8 replace it.</figcaption>
+          <figcaption>Gene 2 is split by a new node, so it is switched off and genes 7 and 8 replace it.</figcaption>
         </figure>
       </section>
 
       <section class="doc-row">
         <div>
           <h2>Species</h2>
-          <p>A new node usually makes a bird a bit worse before it makes it better. If every bird competed against every other bird, those new ideas would die out straight away. So NEAT sorts birds into species by how different their genes are, and each species gets a share of the next generation based on how well its members did on average. A big species can't crowd out a small one just by being big.</p>
-          <p>A species that hasn't improved in 15 generations gets dropped, unless it's one of the two best. The Species setting picks roughly how many species to aim for.</p>
+          <p>Adding a node usually makes a bird slightly worse before it makes it better, so if every bird competed directly against every other bird, new structure would be bred out within a generation or two of appearing. NEAT protects it by sorting birds into species according to how many genes they don't share and how far apart their shared weights are, and then giving each species a share of the next generation in proportion to the average fitness of its members, so a large species cannot crowd out a small one simply by being large.</p>
+          <p>A species that hasn't improved its best score in 15 generations is retired unless it is one of the two strongest, while the distance used to separate species adjusts itself every generation to hold the count near the target chosen in Settings, which is 3, 6 or 10 species.</p>
         </div>
         <figure class="doc-figure">
-          <pre class="formula">fitness = seconds alive
-        + 2 for each pipe
-        + up to 1 for crashing near the gap
+          <pre class="formula">fitness  = seconds alive
+         + 2 for each pipe cleared
+         + up to 1 for crashing near the gap
 
 parents  = best 30% of each species
-children = shared out by species average
-the best bird is copied over unchanged</pre>
-          <figcaption>The same numbers as <code>trainer.js</code> and <code>neat.js</code>.</figcaption>
+children = shared by species average
+elite    = best bird, copied unchanged</pre>
+          <figcaption>The same rules as in <code>trainer.js</code> and <code>neat.js</code>.</figcaption>
         </figure>
       </section>
 
       <section class="doc-row">
         <div>
-          <h2>The course</h2>
-          <p>The first gap is always in the middle. After that the gaps shrink from 176 px to 122 px over the first 60 pipes, and they're allowed to jump further up or down from one to the next. Early on, almost any sensible bird gets somewhere, and later it takes real control. With 50 birds, a run usually clears all 100 pipes somewhere between generation 3 and 17.</p>
-          <p>Each generation gets a new course unless you set it to the same one, in which case the birds can end up memorising it. Play mode uses exactly the same physics and courses, so your score and the ghost's are comparable.</p>
+          <h2>Scoring and the course</h2>
+          <p>A bird's fitness is the number of seconds it survived, plus 2 for every pipe it cleared, plus up to 1 extra point depending on how close it was to the centre of the gap when it crashed. That last term matters mostly in the first few generations, when nearly every bird dies at the same pipe and something has to separate the near misses from the hopeless ones. The best 30% of each species become parents, and the single best bird of each generation is copied into the next one unchanged, so an unlucky mutation can never erase the best solution found so far.</p>
+          <p>The course tightens as it goes, because the first gap is always centred and then, over the next 60 pipes, the gaps shrink from 176 px to 122 px while the largest allowed step between one gap and the next grows from 130 px to 270 px. That ramp is a concession to the problem described below, since before I added it some populations cleared all 100 pipes in their very first generation, which left nothing for evolution to visibly do.</p>
         </div>
         <figure class="doc-figure">
           <svg viewBox="0 0 420 300" role="img" aria-label="Gap size shrinking from 176 to 122 pixels over 60 pipes, then flat">
@@ -110,17 +113,44 @@ the best bird is copied over unchanged</pre>
             <text x="40" y="274">pipe 1</text>
             <text x="290" y="274">pipe 61</text>
           </svg>
-          <figcaption>Gap height by pipe.</figcaption>
+          <figcaption>Gap height by pipe number.</figcaption>
         </figure>
+      </section>
+
+      <section class="doc-row">
+        <div>
+          <h2>Why this is a weak test of NEAT</h2>
+          <p>Flappy Bird is a poor showcase for what NEAT is actually good at, because the game is deterministic and fully observed, which means the right action at any moment is a fixed function of what the bird can see right now. The physics runs in fixed steps with no noise, the sensors report exact values with no delay, and once a course's gaps are drawn nothing random happens again, so a bird never has to remember anything, never has to plan beyond the next gap or two, and is never punished for a decision long after making it. A task with no hidden state gives a network nothing to discover, which removes the main reason for growing hidden nodes in the first place.</p>
+          <p>The clearest evidence is that one line of code does the whole job. A rule that flaps whenever the centre of the next gap is more than 22 px above the bird, and ignores speed, distance and the second gap entirely, clears all 100 pipes on every one of 200 randomly drawn courses, and so does every threshold up to 42 px. The extra inputs I added because they seemed obviously useful turn out to be unnecessary under this physics, probably because every flap sets the bird's vertical speed to the same value, so its height relative to the gap already says almost everything about where it is headed.</p>
+        </div>
+        <figure class="doc-figure">
+          <pre class="formula">                     clears 100 pipes
+
+one-line rule        200 of 200 courses
+full NEAT            20 of 20 runs
+                     median generation 10
+weights only         20 of 20 runs
+                     median generation 11
+random networks      1 of 5,000</pre>
+          <figcaption>Every number on this page can be rerun with <code>npm run experiments</code>.</figcaption>
+        </figure>
+      </section>
+
+      <section class="doc-prose">
+        <p>The second piece of evidence is that NEAT's defining feature, growing the structure of the network, contributes nothing measurable here. Across 20 runs of 50 birds, full NEAT cleared the course in a median of 10 generations with a range of 3 to 16, while the same algorithm with new connections and new nodes switched off, so that it could only tune the original four weights and one bias, cleared it in a median of 11 generations with a range of 5 to 16. Eighteen of the 20 winning networks from the full runs did contain hidden nodes, 1.9 on average, which looks like evolved complexity in the network drawing, but the weight-only runs show that those nodes are passengers carried in by mutation rather than structure the task demands. The hidden nodes you watch light up in the Evolve tab are mostly decorative.</p>
+        <p>Determinism also flatters the progress chart. On a fixed course the carried-over champion flies exactly the same frames again every generation, so the best score can never fall, and in one 30-generation test it climbed from 2 to 100 by generation 12 and then stayed at exactly 100 for the remaining 18 without a single dip. That clean staircase looks like steady learning, while really it shows a population memorising one sequence of gaps, which is why the default gives every generation a fresh course. Even then the only uncertainty in the whole system is which course gets drawn, and it is a mild one, since across 20 runs only 14 of the 608 generations that followed a population's first clear fell short of 100 on a new course, and the worst of those still reached 63.</p>
+        <p>The fair counterpoint is that the problem is narrow rather than trivial, and that narrowness is what NEAT is genuinely solving. Only 7 of the 61 thresholds I tried, spanning 96 px either side of the gap's centre, cleared every course, and when I drew 5,000 random networks the same way generation one is drawn, exactly 1 of them cleared 100 pipes on five test courses, so blind guessing fails and the roughly 10 generations of selection are doing real search. Determinism is also a reasonable choice for a demonstration, because it makes every run reproducible from its seed and every crash explainable after the fact. The point is only that the search mostly amounts to tuning a weight or two until they land inside a narrow band, which is work that much simpler search methods should also manage, so watching NEAT solve Flappy Bird is a good way to see how the algorithm operates and a poor way to judge what it can do.</p>
+      </section>
+
+      <section class="doc-prose">
+        <h2>What would make it a real test</h2>
+        <p>Turning this into a real test of NEAT would mean taking away some of what the bird currently gets for free, so that the right action stops being a fixed function of the current inputs. The tempting first move of hiding the bird's speed would change nothing, because the winning rule never reads it. Small departures from determinism do far more, and they do it quickly, since delaying every flap by just 2 frames, which is 33 ms, drops the best one-line rule from 200 of 200 courses cleared to none, with an average score of 49, while adding noise of about 10 px to the gap sensor also leaves it clearing none, with an average of 60. Both changes force a bird to act on where it is going to be rather than where it is, which is exactly the kind of problem where speed, distance and extra structure should start to matter, although whether NEAT copes with them here is an experiment I haven't run yet.</p>
+        <p>The change that would finally make structure earn its place is to show each gap only briefly as it appears at the right edge of the screen, so that a bird has to remember where the gap was while it travels toward it. Remembering requires recurrent connections, which this feed-forward version of NEAT does not yet allow, and that limitation is the honest summary of the project as it stands, which is a clear and faithful implementation of the algorithm running on a problem that only asks it to use a small part of what it can do.</p>
       </section>
 
       <section class="doc-end">
         <h2>The code</h2>
-        <ul>
-          <li><code>world.js</code>the physics and courses, shared by both modes</li>
-          <li><code>neat.js</code>genomes, mutation, crossover and species</li>
-          <li><code>trainer.js</code>what the birds see and how they're scored</li>
-        </ul>
+        <p>The code follows the same split as this page, with <code>world.js</code> holding the physics and course generation that both modes share, <code>neat.js</code> holding the genomes, mutation, crossover and species, and <code>trainer.js</code> deciding what the birds see and how they are scored. The numbers in the last three sections come from <code>scripts/experiments.js</code>, which reruns every test in about 20 seconds.</p>
         <a class="doc-return" href="/">Back to the game</a>
       </section>
     </main>
