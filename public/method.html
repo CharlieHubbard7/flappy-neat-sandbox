@@ -3,174 +3,125 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Flappy NEAT Method</title>
-    <meta name="description" content="How the Flappy NEAT birds see, decide, and evolve." />
+    <title>How Flappy NEAT works</title>
+    <meta name="description" content="How the Flappy NEAT birds see, decide and evolve." />
     <meta name="theme-color" content="#0a0a0a" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a0a0a'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23c8ff2e'/%3E%3C/svg%3E" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" />
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body class="doc">
     <header class="bar">
-      <a class="mark" href="/">FLAPPY<i>/</i>NEAT</a>
-      <span class="doc-title">METHOD</span>
-      <a class="link" href="/">OPEN THE LAB <span aria-hidden="true">↗</span></a>
+      <a class="name" href="/">Flappy NEAT</a>
+      <a class="link" href="/">Back to the game</a>
     </header>
 
     <main class="doc-main">
       <section class="doc-hero">
-        <p class="eyebrow">00 · OVERVIEW</p>
-        <h1>Fifty small neural networks learn to fly by being bred, not trained.</h1>
-        <p>Nothing here uses gradients or a pre-trained model. Each bird is a genome that describes a tiny network. The population flies one course together, the birds that get furthest have more offspring, and the offspring differ from their parents in weights and sometimes in shape. That loop is NEAT, NeuroEvolution of Augmenting Topologies (Stanley and Miikkulainen, 2002), and the whole of it runs in your browser at whatever speed you choose.</p>
-        <dl class="facts">
-          <div><dt>POPULATION</dt><dd>25 – 200</dd></div>
-          <div><dt>INPUTS</dt><dd>4</dd></div>
-          <div><dt>OUTPUT</dt><dd>FLAP &gt; 0.5</dd></div>
-          <div><dt>PHYSICS</dt><dd>60 HZ FIXED</dd></div>
-        </dl>
+        <h1>How the birds learn</h1>
+        <p>There's no training data and no gradient descent here. Each bird is a small neural network described by a genome. The whole population flies the same course, the ones that get furthest have more children, and the children come out slightly different. Repeat that a few dozen times and you get birds that can fly. The method is NEAT (Stanley and Miikkulainen, 2002), and all of it runs in your browser.</p>
       </section>
 
       <section class="doc-row">
-        <div class="doc-copy">
-          <p class="eyebrow">01 · SENSES</p>
-          <h2>Four numbers per frame</h2>
-          <p>Each bird reads the vertical distance to the centre of the next gap, its own vertical speed, the horizontal distance until it is clear of the next pipe, and the vertical distance to the gap after that. All four are scaled to roughly −1 to 1. The lookahead matters once the course tightens, because a bird that only knows the next gap tends to exit it heading the wrong way.</p>
-          <p>The network has one output, passed through a sigmoid, and the bird flaps on any frame where that value is above 0.5. In the lab, the lime lines on the leading bird are exactly these sensors.</p>
+        <div>
+          <h2>What a bird sees</h2>
+          <p>Four numbers, every frame: how far it is above or below the next gap, how fast it's moving up or down, how far it still has to go to clear the next pipe, and where the gap after that one is. That last one turned out to matter once the gaps get tight, because a bird that only knows about the next gap tends to come out of it heading the wrong way.</p>
+          <p>The network has one output. If it's above 0.5, the bird flaps.</p>
         </div>
         <figure class="doc-figure">
-          <svg viewBox="0 0 420 300" role="img" aria-label="A bird with lines to the next two gaps, labelled with the four sensor inputs">
-            <g class="pipe"><rect x="190" y="0" width="44" height="96" /><rect x="190" y="196" width="44" height="104" /><rect x="350" y="0" width="44" height="40" /><rect x="350" y="140" width="44" height="160" /></g>
-            <line class="acc" x1="78" y1="170" x2="190" y2="146" />
-            <line class="acc dot" x1="78" y1="170" x2="350" y2="90" />
-            <path class="acc" d="M184 146h12M190 140v12M344 90h12M350 84v12" />
+          <svg viewBox="0 0 420 300" role="img" aria-label="A bird with a line to the centre of the next gap">
+            <g class="pipe"><rect x="190" y="-1" width="44" height="97" /><rect x="190" y="196" width="44" height="105" /><rect x="350" y="-1" width="44" height="41" /><rect x="350" y="140" width="44" height="161" /></g>
+            <line class="acc" x1="78" y1="170" x2="212" y2="146" />
             <rect class="bird" x="66" y="158" width="24" height="24" />
             <path class="dim" d="M78 194v40M73 228l5 6 5-6" />
             <path class="dim" d="M90 262H234M90 257v10M234 257v10" />
-            <path class="dim" d="M150 146v24M145 146h10M145 170h10" />
-            <text x="100" y="212">VEL</text>
-            <text x="120" y="282">PIPE Δx</text>
-            <text x="114" y="138">GAP Δy</text>
-            <text x="262" y="104">NEXT Δy</text>
+            <text x="96" y="214">speed</text>
+            <text x="138" y="284">pipe</text>
+            <text x="120" y="142">gap</text>
+            <text x="300" y="108">next gap</text>
           </svg>
-          <figcaption>GAP Δy · VEL · PIPE Δx · NEXT Δy → network → FLAP</figcaption>
+          <figcaption>The lime line is the one you see on the leading bird in Evolve.</figcaption>
         </figure>
       </section>
 
       <section class="doc-row">
-        <div class="doc-copy">
-          <p class="eyebrow">02 · GENOMES</p>
-          <h2>Structure that grows</h2>
-          <p>Every genome starts minimal, with the four inputs wired straight to the output and no hidden nodes. Mutation then nudges weights and biases on most offspring, adds a new connection to about one child in seven, and splits an existing connection with a new hidden node in about one in seventeen. Splitting disables the old link and adds two new ones, the first with weight 1 and the second with the old weight, so the child behaves almost exactly like its parent and the new node only matters once later mutations change it.</p>
-          <p>Each new connection gets an innovation number that the whole run shares, so the same change made in two different birds gets the same number. Crossover lines the parents' genes up by those numbers, which is what lets two differently shaped networks have a sensible child.</p>
+        <div>
+          <h2>Networks that grow</h2>
+          <p>Every bird starts as the simplest possible network, with the four inputs wired straight to the output. When a bird has children, most of them get their weights nudged. About one in seven also gets a new connection, and about one in seventeen gets a new hidden node, which is added by splitting an existing connection in two.</p>
+          <p>Each new connection gets a number that's shared across the whole run, so if two birds happen to grow the same connection, it has the same number in both. That's what lets two differently shaped parents have a child that makes sense: their genes line up by number.</p>
         </div>
         <figure class="doc-figure">
-          <svg viewBox="0 0 420 300" role="img" aria-label="A genome table next to the network it encodes, with one connection split by a new hidden node">
-            <g class="genes">
-              <text x="16" y="34" class="head">INN  FROM → TO   W</text>
-              <text x="16" y="62">0    GAP  → OUT  +2.1</text>
-              <text x="16" y="86">1    VEL  → OUT  −1.4</text>
-              <text x="16" y="110" class="off">2    PDX  → OUT  +0.6</text>
-              <text x="16" y="134">3    NDY  → OUT  +0.3</text>
-              <text x="16" y="158" class="new">7    PDX  → H5   +1.0</text>
-              <text x="16" y="182" class="new">8    H5   → OUT  +0.6</text>
-            </g>
-            <g transform="translate(232 40)">
-              <line class="ln" x1="0" y1="10" x2="150" y2="100" />
-              <line class="ln dash" x1="0" y1="70" x2="150" y2="100" />
-              <line class="ln off" x1="0" y1="130" x2="150" y2="100" />
-              <line class="ln" x1="0" y1="190" x2="150" y2="100" />
-              <line class="acc" x1="0" y1="130" x2="80" y2="160" />
-              <line class="acc" x1="80" y1="160" x2="150" y2="100" />
-              <rect class="node" x="-5" y="5" width="10" height="10" />
-              <rect class="node" x="-5" y="65" width="10" height="10" />
-              <rect class="node" x="-5" y="125" width="10" height="10" />
-              <rect class="node" x="-5" y="185" width="10" height="10" />
-              <rect class="node accent" x="75" y="155" width="10" height="10" />
-              <rect class="node" x="145" y="95" width="10" height="10" />
+          <svg viewBox="0 0 420 300" role="img" aria-label="A list of genes next to the network they describe, with one connection split by a new node">
+            <text x="20" y="44" class="head">#   from → to      weight</text>
+            <text x="20" y="74">0   gap → flap       2.1</text>
+            <text x="20" y="98">1   speed → flap    −1.4</text>
+            <text x="20" y="122" class="off">2   pipe → flap      0.6</text>
+            <text x="20" y="146">3   next → flap      0.3</text>
+            <text x="20" y="170" class="new">7   pipe → new       1.0</text>
+            <text x="20" y="194" class="new">8   new → flap       0.6</text>
+            <g transform="translate(240 50)">
+              <line class="ln" x1="0" y1="10" x2="140" y2="100" />
+              <line class="ln dash" x1="0" y1="70" x2="140" y2="100" />
+              <line class="ln off" x1="0" y1="130" x2="140" y2="100" />
+              <line class="ln" x1="0" y1="190" x2="140" y2="100" />
+              <line class="acc" x1="0" y1="130" x2="75" y2="160" />
+              <line class="acc" x1="75" y1="160" x2="140" y2="100" />
+              <circle class="node" cx="0" cy="10" r="4" />
+              <circle class="node" cx="0" cy="70" r="4" />
+              <circle class="node" cx="0" cy="130" r="4" />
+              <circle class="node" cx="0" cy="190" r="4" />
+              <circle class="node accent" cx="75" cy="160" r="4" />
+              <circle class="node" cx="140" cy="100" r="4" />
             </g>
           </svg>
-          <figcaption>Gene 2 split by a new node: 2 disabled, 7 and 8 added. Dashed = negative weight.</figcaption>
+          <figcaption>Gene 2 gets split by a new node. It's switched off, and 7 and 8 replace it.</figcaption>
         </figure>
       </section>
 
       <section class="doc-row">
-        <div class="doc-copy">
-          <p class="eyebrow">03 · SPECIES</p>
-          <h2>Protecting new ideas</h2>
-          <p>A freshly added node usually makes a bird slightly worse before it makes it better, so if every bird competed with every other one, structural innovation would be weeded out almost immediately. NEAT avoids that by grouping genomes into species by a compatibility distance, which counts the genes two genomes do not share and adds half the mean weight difference of the genes they do.</p>
-          <p>Offspring are shared between species in proportion to each species' mean fitness, so a big species cannot crowd out a small one just by being big. A species that has not improved its best score in 15 generations is retired, unless it is one of the two best. The distance threshold adjusts itself each generation to hold the species count near the target you pick in the lab.</p>
-        </div>
-        <figure class="doc-figure">
-          <svg viewBox="0 0 420 300" role="img" aria-label="A bar split into species segments, with one highlighted">
-            <text x="16" y="60" class="head">GEN 004</text>
-            <g class="bars">
-              <rect x="16" y="72" width="388" height="10" />
-            </g>
-            <text x="16" y="136" class="head">GEN 012</text>
-            <rect class="seg" x="16" y="148" width="150" height="10" /><rect class="seg acc-fill" x="170" y="148" width="96" height="10" /><rect class="seg" x="270" y="148" width="70" height="10" /><rect class="seg" x="344" y="148" width="40" height="10" /><rect class="seg" x="388" y="148" width="16" height="10" />
-            <text x="16" y="212" class="head">GEN 030</text>
-            <rect class="seg acc-fill" x="16" y="224" width="170" height="10" /><rect class="seg" x="190" y="224" width="110" height="10" /><rect class="seg" x="304" y="224" width="64" height="10" /><rect class="seg" x="372" y="224" width="32" height="10" />
-            <text x="16" y="276">ONE SEGMENT PER SPECIES · LIME = THE LEADER'S</text>
-          </svg>
-          <figcaption>Everyone starts in one species. Mutation splits them apart.</figcaption>
-        </figure>
-      </section>
-
-      <section class="doc-row">
-        <div class="doc-copy">
-          <p class="eyebrow">04 · SELECTION</p>
-          <h2>What counts as good</h2>
-          <p>A bird's fitness is the seconds it survived, plus two for every pipe it cleared, plus up to one more depending on how close it was to the gap's centre when it crashed. The last term breaks ties between birds that die at the same pipe, which is most of them in the first few generations.</p>
-          <p>Within each species the top 30% become parents, 70% of children come from crossover and the rest from cloning a parent, and every child is then mutated. The single best genome of the generation is copied over unchanged, so the best score never regresses because of an unlucky mutation. That carried-over champion is the lime bird you follow in the lab.</p>
-          <p>A generation ends when every bird has crashed or the survivors clear 100 pipes. By default each generation flies a new course, which rewards a policy that generalizes. Setting COURSE to FIXED replays the same pipes every time, which makes the curve smoother but lets the population memorize it.</p>
+        <div>
+          <h2>Species</h2>
+          <p>A new node usually makes a bird a bit worse before it makes it better. If every bird competed against every other bird, those new ideas would die out straight away. So NEAT sorts birds into species by how different their genes are, and each species gets a share of the next generation based on how well its members did on average. A big species can't crowd out a small one just by being big.</p>
+          <p>A species that hasn't improved in 15 generations gets dropped, unless it's one of the two best. The Species setting picks roughly how many species to aim for.</p>
         </div>
         <figure class="doc-figure">
           <pre class="formula">fitness = seconds alive
-        + 2 × pipes cleared
-        + (1 − |gap Δy| at crash)
+        + 2 for each pipe
+        + up to 1 for crashing near the gap
 
-parents   = top 30% of each species
-offspring ∝ species mean fitness
-elite     = best genome, unchanged
-cap       = 100 pipes</pre>
-          <figcaption>Same numbers as <code>public/js/trainer.js</code> and <code>public/js/neat.js</code>.</figcaption>
+parents  = best 30% of each species
+children = shared out by species average
+the best bird is copied over unchanged</pre>
+          <figcaption>The same numbers as <code>trainer.js</code> and <code>neat.js</code>.</figcaption>
         </figure>
       </section>
 
       <section class="doc-row">
-        <div class="doc-copy">
-          <p class="eyebrow">05 · COURSE</p>
-          <h2>A curriculum built into the level</h2>
-          <p>The first gap is always centred. After that, gaps shrink from 176 px to 122 px over the first 60 pipes, while the largest allowed jump between one gap and the next grows from 130 px to 270 px. Early generations therefore get a forgiving start that rewards any sensible policy, and later ones are pushed toward precise control. On six test seeds, a population of 50 clears all 100 pipes in between 2 and 16 generations.</p>
-          <p>Play mode uses the identical physics and course generator, so your score and the ghost's score are measured on the same terms.</p>
+        <div>
+          <h2>The course</h2>
+          <p>The first gap is always in the middle. After that the gaps shrink from 176 px to 122 px over the first 60 pipes, and they're allowed to jump further up or down from one to the next. Early on, almost any sensible bird gets somewhere, and later it takes real control. With 50 birds, a run usually clears all 100 pipes somewhere between generation 3 and 17.</p>
+          <p>Each generation gets a new course unless you set it to the same one, in which case the birds can end up memorising it. Play mode uses exactly the same physics and courses, so your score and the ghost's are comparable.</p>
         </div>
         <figure class="doc-figure">
           <svg viewBox="0 0 420 300" role="img" aria-label="Gap size shrinking from 176 to 122 pixels over 60 pipes, then flat">
             <path class="dim" d="M40 40V250H404" />
             <path class="ln" d="M40 70L310 210H404" />
-            <path class="acc" d="M310 204v12" />
-            <text x="44" y="62">176 PX</text>
-            <text x="314" y="200">122 PX</text>
-            <text x="40" y="272">PIPE 1</text>
-            <text x="290" y="272">PIPE 61</text>
-            <text x="360" y="272">100</text>
+            <text x="48" y="62">176 px</text>
+            <text x="314" y="198">122 px</text>
+            <text x="40" y="274">pipe 1</text>
+            <text x="290" y="274">pipe 61</text>
           </svg>
-          <figcaption>Gap height by pipe number.</figcaption>
+          <figcaption>Gap height by pipe.</figcaption>
         </figure>
       </section>
 
       <section class="doc-end">
-        <p class="eyebrow">06 · BUILD</p>
-        <h2>Static files, no server</h2>
-        <div class="stack">
-          <p><strong>world.js</strong><span>Deterministic physics and course generation, shared by both modes.</span></p>
-          <p><strong>neat.js</strong><span>Genomes, innovation numbers, crossover, speciation and a compiled feed-forward evaluator.</span></p>
-          <p><strong>trainer.js</strong><span>Sensors, fitness and generation bookkeeping on top of the two.</span></p>
-        </div>
-        <p class="doc-note">The simulation advances in fixed 1/60 s steps and the renderer interpolates between the last two, so motion is smooth at any refresh rate and a seed always reproduces the same run.</p>
-        <a class="doc-return" href="/">OPEN THE LAB ↗</a>
+        <h2>The code</h2>
+        <ul>
+          <li><code>world.js</code>the physics and courses, shared by both modes</li>
+          <li><code>neat.js</code>genomes, mutation, crossover and species</li>
+          <li><code>trainer.js</code>what the birds see and how they're scored</li>
+        </ul>
+        <a class="doc-return" href="/">Back to the game</a>
       </section>
     </main>
   </body>

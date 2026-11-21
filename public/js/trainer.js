@@ -2,7 +2,7 @@ import { Genome, Network, Population } from "./neat.js";
 import { mixSeed } from "./rng.js";
 import { CONFIG, World } from "./world.js";
 
-export const INPUT_LABELS = ["GAP Δy", "VEL", "PIPE Δx", "NEXT Δy"];
+export const INPUT_LABELS = ["gap", "speed", "pipe", "next gap"];
 
 export const PRESETS = {
   mutation: {
