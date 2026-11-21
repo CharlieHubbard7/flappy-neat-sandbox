@@ -46,4 +46,4 @@ npm run dev     # http://localhost:8000
 npm test        # 20 tests, including one that checks NEAT actually clears the course
 ```
 
-Vercel deploys `public/` as a static site using [`vercel.json`](vercel.json). Any other static host works the same way.
+Vercel deploys `public/` as a static site. [`vercel.json`](vercel.json) sets the framework to none and skips the install and build steps, which overrides whatever the dashboard has saved. That matters for this project, because Vercel detected it as FastAPI back when it had a Python backend, and that preset fails with `FASTAPI_ENTRYPOINT_NOT_FOUND` now that there is no Python entrypoint. Any other static host works by serving `public/` as is.
