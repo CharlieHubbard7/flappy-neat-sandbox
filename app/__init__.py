@@ -1,1 +1,0 @@
-"""Flappy Bird sandbox application."""

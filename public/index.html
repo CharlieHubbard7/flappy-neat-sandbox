@@ -2,87 +2,147 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>NEAT Flappy Bird</title>
-    <meta name="description" content="An interactive NEAT evolution experiment built around Flappy Bird." />
-    <meta name="theme-color" content="#eee8df" />
-    <link rel="stylesheet" href="/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Flappy NEAT</title>
+    <meta name="description" content="Play Flappy Bird, or watch a population of neural networks learn it with NEAT, live in your browser." />
+    <meta name="theme-color" content="#0a0a0a" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a0a0a'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23c8ff2e'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" />
+    <link rel="stylesheet" href="/style.css" />
   </head>
-  <body data-mode="human">
-    <main class="app-shell">
-      <header class="topbar">
-        <h1>NEAT Flappy Bird</h1>
-        <div class="mode-switch" role="group" aria-label="Play mode">
-          <button class="mode-button active" data-mode="human" type="button" aria-pressed="true">Human</button>
-          <button class="mode-button" data-mode="evolution" type="button" aria-pressed="false">AI</button>
-        </div>
-        <div class="header-end">
-          <a class="method-link" href="/method.html">Method</a>
-          <dl class="headline-metrics" aria-live="polite">
-            <div id="metric-one"><dt id="metric-one-label">score</dt><dd id="metric-one-value">0</dd></div>
-            <div id="metric-two"><dt id="metric-two-label">best</dt><dd id="metric-two-value">0</dd></div>
-            <div id="metric-three" hidden><dt id="metric-three-label">species</dt><dd id="metric-three-value">—</dd></div>
-            <div id="metric-four" hidden><dt id="metric-four-label">fitness</dt><dd id="metric-four-value">—</dd></div>
-          </dl>
-        </div>
+  <body data-mode="play">
+    <div class="shell">
+      <header class="bar">
+        <a class="mark" href="/">FLAPPY<i>/</i>NEAT</a>
+        <nav class="tabs" aria-label="Mode">
+          <button type="button" data-mode="play" aria-pressed="true"><span>01</span>PLAY</button>
+          <button type="button" data-mode="evolve" aria-pressed="false"><span>02</span>EVOLVE</button>
+        </nav>
+        <a class="link" href="/method.html">METHOD <span aria-hidden="true">↗</span></a>
       </header>
 
-      <section class="playfield" aria-label="Flappy Bird simulation">
-        <div class="game-frame">
-          <canvas id="game" width="480" height="640" aria-label="Flappy Bird game. Click or press Space to flap."></canvas>
+      <main class="main">
+        <div class="stage-wrap">
+          <div class="stage">
+            <canvas id="game" aria-label="Game. Press Space, the up arrow, or tap to flap."></canvas>
+          </div>
         </div>
 
-        <aside class="inspector" id="inspector" aria-label="AI evolution metrics" hidden>
-          <section class="experiment-controls" aria-label="Experiment controls">
-            <label>Simulation rate
-              <select id="simulation-rate">
-                <option value="1">1×</option>
-                <option value="4" selected>4×</option>
-                <option value="12">12×</option>
-              </select>
-            </label>
-            <label>Speciation
-              <select id="speciation">
-                <option value="stable">Stable</option>
-                <option value="balanced" selected>Balanced</option>
-                <option value="diverse">Diverse</option>
-              </select>
-            </label>
-            <label>Structural mutation
-              <select id="mutation">
-                <option value="conservative">Conservative</option>
-                <option value="balanced" selected>Balanced</option>
-                <option value="exploratory">Exploratory</option>
-              </select>
-            </label>
-          </section>
-          <dl class="ai-metrics">
-            <div><dt>generation</dt><dd id="generation">—</dd></div>
-            <div><dt>alive</dt><dd id="alive">—</dd></div>
-            <div><dt>gate 1</dt><dd id="first-gate">—</dd></div>
-            <div><dt>nodes</dt><dd id="nodes">—</dd></div>
-            <div><dt>edges</dt><dd id="edges">—</dd></div>
-          </dl>
-          <dl class="signal-grid" aria-label="Leading bird sensor values">
-            <div><dt>vy</dt><dd id="input-vy">—</dd></div>
-            <div><dt>dx</dt><dd id="input-dx">—</dd></div>
-            <div><dt>dy top</dt><dd id="input-top">—</dd></div>
-            <div><dt>dy bottom</dt><dd id="input-bottom">—</dd></div>
-            <div class="decision"><dt>jump</dt><dd id="jump-output">—</dd></div>
-          </dl>
-          <section class="figure">
-            <header><span>Current leader topology</span><span>inputs → action</span></header>
-            <canvas id="network" width="360" height="270" aria-label="Current leading neural network"></canvas>
-            <p>Teal + · coral − · gold new</p>
-          </section>
-          <section class="figure">
-            <header><span>Fitness by generation</span><span>max / mean</span></header>
-            <canvas id="chart" width="360" height="104" aria-label="Fitness history"></canvas>
-          </section>
+        <aside class="panel">
+          <div class="pane" data-pane="play">
+            <dl class="stats">
+              <div><dt>SCORE</dt><dd id="play-score">00</dd></div>
+              <div><dt>BEST</dt><dd id="play-best">00</dd></div>
+              <div><dt>GHOST</dt><dd id="play-ghost">--</dd></div>
+            </dl>
+
+            <section class="block">
+              <h2>INPUT</h2>
+              <p class="keys"><kbd>SPACE</kbd><kbd>↑</kbd><kbd>W</kbd><kbd>TAP</kbd><span>FLAP</span></p>
+            </section>
+
+            <section class="block">
+              <h2>GHOST <span>RACE THE BEST EVOLVED NETWORK</span></h2>
+              <div class="seg" id="ghost-toggle" role="group" aria-label="Ghost">
+                <button type="button" data-value="off">OFF</button>
+                <button type="button" data-value="on">ON</button>
+              </div>
+              <p class="note" id="ghost-note">No champion yet. Run EVOLVE to breed one.</p>
+            </section>
+
+            <section class="block">
+              <h2>COURSE</h2>
+              <p class="note">Gaps open at 176 px and tighten to 122 px by pipe 61, while the distance between consecutive gaps grows. The evolved birds fly the same course under the same physics.</p>
+            </section>
+          </div>
+
+          <div class="pane" data-pane="evolve" hidden>
+            <dl class="stats">
+              <div><dt>GEN</dt><dd id="evo-gen">000</dd></div>
+              <div><dt>ALIVE</dt><dd id="evo-alive">--</dd></div>
+              <div><dt>SPECIES</dt><dd id="evo-species">--</dd></div>
+              <div><dt>SCORE</dt><dd id="evo-score">00</dd></div>
+              <div><dt>RECORD</dt><dd id="evo-record">00</dd></div>
+            </dl>
+
+            <section class="block">
+              <h2>LEADER NETWORK <span id="net-meta">--</span></h2>
+              <canvas id="network" class="network" aria-label="The leading bird's neural network"></canvas>
+              <div class="readout" id="readout"></div>
+            </section>
+
+            <section class="block">
+              <h2>BEST SCORE PER GENERATION <span>BAR BEST · LINE MEAN</span></h2>
+              <canvas id="history" class="history" aria-label="Best and mean score per generation"></canvas>
+            </section>
+
+            <section class="block">
+              <h2>SPECIES <span id="species-meta">--</span></h2>
+              <canvas id="species" class="species" aria-label="Species sizes"></canvas>
+            </section>
+
+            <section class="block controls">
+              <div class="row">
+                <span>RUN</span>
+                <div class="seg">
+                  <button type="button" id="pause">PAUSE</button>
+                  <button type="button" id="reset">RESET</button>
+                </div>
+              </div>
+              <div class="row">
+                <span>SPEED</span>
+                <div class="seg" data-setting="speed" role="group" aria-label="Simulation speed">
+                  <button type="button" data-value="1">1×</button>
+                  <button type="button" data-value="4">4×</button>
+                  <button type="button" data-value="16">16×</button>
+                  <button type="button" data-value="max">MAX</button>
+                </div>
+              </div>
+              <div class="row">
+                <span>POPULATION</span>
+                <div class="seg" data-setting="populationSize" role="group" aria-label="Population size, restarts the run">
+                  <button type="button" data-value="25">25</button>
+                  <button type="button" data-value="50">50</button>
+                  <button type="button" data-value="100">100</button>
+                  <button type="button" data-value="200">200</button>
+                </div>
+              </div>
+              <div class="row">
+                <span>MUTATION</span>
+                <div class="seg" data-setting="mutation" role="group" aria-label="Structural mutation rate">
+                  <button type="button" data-value="low">LOW</button>
+                  <button type="button" data-value="mid">MID</button>
+                  <button type="button" data-value="high">HIGH</button>
+                </div>
+              </div>
+              <div class="row">
+                <span>SPECIES</span>
+                <div class="seg" data-setting="species" role="group" aria-label="Target species count">
+                  <button type="button" data-value="few">FEW</button>
+                  <button type="button" data-value="mid">MID</button>
+                  <button type="button" data-value="many">MANY</button>
+                </div>
+              </div>
+              <div class="row">
+                <span>COURSE</span>
+                <div class="seg" data-setting="course" role="group" aria-label="Course per generation">
+                  <button type="button" data-value="fixed">FIXED</button>
+                  <button type="button" data-value="varied">VARIED</button>
+                </div>
+              </div>
+              <p class="note">POPULATION restarts the run. The others apply from the next generation. <kbd>SPACE</kbd> pauses, <kbd>1</kbd>–<kbd>4</kbd> set speed, <kbd>R</kbd> resets.</p>
+            </section>
+          </div>
         </aside>
-      </section>
-    </main>
-    <script type="module" src="/game.js"></script>
-    <script type="module" src="/evolution.js"></script>
+      </main>
+
+      <footer class="status">
+        <span id="status-left"></span>
+        <span id="status-right"></span>
+      </footer>
+    </div>
+    <script type="module" src="/js/app.js"></script>
   </body>
 </html>
