@@ -4,105 +4,79 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Flappy NEAT</title>
-    <meta name="description" content="Play Flappy Bird, or watch a population of neural networks learn it with NEAT, live in your browser." />
+    <meta name="description" content="Play Flappy Bird, or watch neural networks learn it with NEAT." />
     <meta name="theme-color" content="#0a0a0a" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a0a0a'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23c8ff2e'/%3E%3C/svg%3E" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" />
     <link rel="stylesheet" href="/style.css" />
   </head>
-  <body data-mode="play">
-    <div class="shell">
-      <header class="bar">
-        <a class="mark" href="/">FLAPPY<i>/</i>NEAT</a>
-        <nav class="tabs" aria-label="Mode">
-          <button type="button" data-mode="play" aria-pressed="true"><span>01</span>PLAY</button>
-          <button type="button" data-mode="evolve" aria-pressed="false"><span>02</span>EVOLVE</button>
-        </nav>
-        <a class="link" href="/method.html">METHOD <span aria-hidden="true">↗</span></a>
-      </header>
+  <body>
+    <header class="bar">
+      <a class="name" href="/">Flappy NEAT</a>
+      <nav class="tabs" aria-label="Mode">
+        <button type="button" data-mode="play" aria-pressed="true">Play</button>
+        <button type="button" data-mode="evolve" aria-pressed="false">Evolve</button>
+      </nav>
+      <a class="link" href="/method.html">How it works</a>
+    </header>
 
-      <main class="main">
-        <div class="stage-wrap">
-          <div class="stage">
-            <canvas id="game" aria-label="Game. Press Space, the up arrow, or tap to flap."></canvas>
-          </div>
+    <main class="main">
+      <div class="stage-wrap">
+        <div class="stage">
+          <canvas id="game" aria-label="Game. Press space or tap to flap."></canvas>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <div class="pane" data-pane="play">
+          <dl class="stats">
+            <div><dt>Score</dt><dd id="play-score">0</dd></div>
+            <div><dt>Best</dt><dd id="play-best">0</dd></div>
+          </dl>
+          <label class="check">
+            <input type="checkbox" id="ghost-toggle" />
+            <span>Race the best evolved bird</span>
+          </label>
+          <p class="note" id="ghost-note"></p>
         </div>
 
-        <aside class="panel">
-          <div class="pane" data-pane="play">
-            <dl class="stats">
-              <div><dt>SCORE</dt><dd id="play-score">00</dd></div>
-              <div><dt>BEST</dt><dd id="play-best">00</dd></div>
-              <div><dt>GHOST</dt><dd id="play-ghost">--</dd></div>
-            </dl>
+        <div class="pane" data-pane="evolve" hidden>
+          <dl class="stats">
+            <div><dt>Generation</dt><dd id="evo-gen">0</dd></div>
+            <div><dt>Alive</dt><dd id="evo-alive">0</dd></div>
+            <div><dt>Score</dt><dd id="evo-score">0</dd></div>
+            <div><dt>Record</dt><dd id="evo-record">0</dd></div>
+          </dl>
 
-            <section class="block">
-              <h2>INPUT</h2>
-              <p class="keys"><kbd>SPACE</kbd><kbd>↑</kbd><kbd>W</kbd><kbd>TAP</kbd><span>FLAP</span></p>
-            </section>
+          <section>
+            <h2>Leading bird</h2>
+            <canvas id="network" class="network" aria-label="The leading bird's neural network"></canvas>
+          </section>
 
-            <section class="block">
-              <h2>GHOST <span>RACE THE BEST EVOLVED NETWORK</span></h2>
-              <div class="seg" id="ghost-toggle" role="group" aria-label="Ghost">
-                <button type="button" data-value="off">OFF</button>
-                <button type="button" data-value="on">ON</button>
+          <section>
+            <h2>Best score by generation</h2>
+            <canvas id="history" class="history" aria-label="Best score per generation"></canvas>
+          </section>
+
+          <section class="controls">
+            <div class="row">
+              <button type="button" class="text" id="pause">Pause</button>
+              <button type="button" class="text" id="reset">Restart</button>
+            </div>
+            <div class="row">
+              <span>Speed</span>
+              <div class="options" data-setting="speed">
+                <button type="button" data-value="1">1×</button>
+                <button type="button" data-value="4">4×</button>
+                <button type="button" data-value="16">16×</button>
+                <button type="button" data-value="max">Max</button>
               </div>
-              <p class="note" id="ghost-note">No champion yet. Run EVOLVE to breed one.</p>
-            </section>
+            </div>
 
-            <section class="block">
-              <h2>COURSE</h2>
-              <p class="note">Gaps open at 176 px and tighten to 122 px by pipe 61, while the distance between consecutive gaps grows. The evolved birds fly the same course under the same physics.</p>
-            </section>
-          </div>
-
-          <div class="pane" data-pane="evolve" hidden>
-            <dl class="stats">
-              <div><dt>GEN</dt><dd id="evo-gen">000</dd></div>
-              <div><dt>ALIVE</dt><dd id="evo-alive">--</dd></div>
-              <div><dt>SPECIES</dt><dd id="evo-species">--</dd></div>
-              <div><dt>SCORE</dt><dd id="evo-score">00</dd></div>
-              <div><dt>RECORD</dt><dd id="evo-record">00</dd></div>
-            </dl>
-
-            <section class="block">
-              <h2>LEADER NETWORK <span id="net-meta">--</span></h2>
-              <canvas id="network" class="network" aria-label="The leading bird's neural network"></canvas>
-              <div class="readout" id="readout"></div>
-            </section>
-
-            <section class="block">
-              <h2>BEST SCORE PER GENERATION <span>BAR BEST · LINE MEAN</span></h2>
-              <canvas id="history" class="history" aria-label="Best and mean score per generation"></canvas>
-            </section>
-
-            <section class="block">
-              <h2>SPECIES <span id="species-meta">--</span></h2>
-              <canvas id="species" class="species" aria-label="Species sizes"></canvas>
-            </section>
-
-            <section class="block controls">
+            <details>
+              <summary>Settings</summary>
               <div class="row">
-                <span>RUN</span>
-                <div class="seg">
-                  <button type="button" id="pause">PAUSE</button>
-                  <button type="button" id="reset">RESET</button>
-                </div>
-              </div>
-              <div class="row">
-                <span>SPEED</span>
-                <div class="seg" data-setting="speed" role="group" aria-label="Simulation speed">
-                  <button type="button" data-value="1">1×</button>
-                  <button type="button" data-value="4">4×</button>
-                  <button type="button" data-value="16">16×</button>
-                  <button type="button" data-value="max">MAX</button>
-                </div>
-              </div>
-              <div class="row">
-                <span>POPULATION</span>
-                <div class="seg" data-setting="populationSize" role="group" aria-label="Population size, restarts the run">
+                <span>Birds</span>
+                <div class="options" data-setting="populationSize">
                   <button type="button" data-value="25">25</button>
                   <button type="button" data-value="50">50</button>
                   <button type="button" data-value="100">100</button>
@@ -110,39 +84,34 @@
                 </div>
               </div>
               <div class="row">
-                <span>MUTATION</span>
-                <div class="seg" data-setting="mutation" role="group" aria-label="Structural mutation rate">
-                  <button type="button" data-value="low">LOW</button>
-                  <button type="button" data-value="mid">MID</button>
-                  <button type="button" data-value="high">HIGH</button>
+                <span>Mutation</span>
+                <div class="options" data-setting="mutation">
+                  <button type="button" data-value="low">Low</button>
+                  <button type="button" data-value="mid">Medium</button>
+                  <button type="button" data-value="high">High</button>
                 </div>
               </div>
               <div class="row">
-                <span>SPECIES</span>
-                <div class="seg" data-setting="species" role="group" aria-label="Target species count">
-                  <button type="button" data-value="few">FEW</button>
-                  <button type="button" data-value="mid">MID</button>
-                  <button type="button" data-value="many">MANY</button>
+                <span>Species</span>
+                <div class="options" data-setting="species">
+                  <button type="button" data-value="few">Few</button>
+                  <button type="button" data-value="mid">Some</button>
+                  <button type="button" data-value="many">Many</button>
                 </div>
               </div>
               <div class="row">
-                <span>COURSE</span>
-                <div class="seg" data-setting="course" role="group" aria-label="Course per generation">
-                  <button type="button" data-value="fixed">FIXED</button>
-                  <button type="button" data-value="varied">VARIED</button>
+                <span>Course</span>
+                <div class="options" data-setting="course">
+                  <button type="button" data-value="varied">New each time</button>
+                  <button type="button" data-value="fixed">Same</button>
                 </div>
               </div>
-              <p class="note">POPULATION restarts the run. The others apply from the next generation. <kbd>SPACE</kbd> pauses, <kbd>1</kbd>–<kbd>4</kbd> set speed, <kbd>R</kbd> resets.</p>
-            </section>
-          </div>
-        </aside>
-      </main>
-
-      <footer class="status">
-        <span id="status-left"></span>
-        <span id="status-right"></span>
-      </footer>
-    </div>
+              <p class="note">Changing the number of birds restarts the run.</p>
+            </details>
+          </section>
+        </div>
+      </aside>
+    </main>
     <script type="module" src="/js/app.js"></script>
   </body>
 </html>

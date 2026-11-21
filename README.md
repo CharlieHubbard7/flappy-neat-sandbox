@@ -8,7 +8,7 @@ A Flappy Bird game you can play yourself, or watch a population of neural networ
 
 **Play** runs the same physics and course generator the AI trains on, at a fixed 60 Hz step, and remembers your best score. Once evolution has produced a champion, you can turn on a ghost and race it on the same course.
 
-**Evolve** flies a population of 25 to 200 genomes at once. The panel shows the leading bird's network as it fires, with node brightness for activation, line weight for connection strength and dashes for negative weights, alongside its four live sensor values, the best and mean score of every generation, and the current species split. You can change speed (1×, 4×, 16×, or as fast as the machine allows), structural mutation rate, target species count and whether every generation flies the same course or a new one. Population size restarts the run, and the other settings apply from the next generation.
+**Evolve** flies a population of 25 to 200 birds at once. The side panel shows the leading bird's network as it makes decisions, with brighter lines carrying stronger signals and dashed lines for negative weights, plus the best score of every generation. You can pause, restart and change the speed, and a Settings section holds the number of birds, the mutation rate, roughly how many species to aim for, and whether each generation gets a new course.
 
 ## The model
 

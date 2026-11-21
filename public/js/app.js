@@ -1,12 +1,11 @@
 import { CONFIG, World } from "./world.js";
 import { INPUT_LABELS, Trainer, championNetwork, sense } from "./trainer.js";
 import { drawWorld, fitCanvas } from "./render.js";
-import { drawHistory, drawNetwork, drawSpecies, layoutNetwork } from "./viz.js";
+import { drawHistory, drawNetwork, layoutNetwork } from "./viz.js";
 
 const $ = (selector) => document.querySelector(selector);
 const DT = CONFIG.dt;
 const MAX_SCORE = 100;
-const pad = (value, width = 2) => String(value).padStart(width, "0");
 
 const store = {
   get(key, fallback) {
@@ -21,14 +20,15 @@ const store = {
     try {
       localStorage.setItem(`flappy-neat:${key}`, JSON.stringify(value));
     } catch {
-      /* storage can be unavailable; nothing here depends on it */
+      // Private windows can block storage. Nothing depends on it.
     }
   },
 };
 
-// Writes to the DOM only when a value actually changes.
+// Only touch the DOM when a value actually changes.
 const shown = new Map();
 function text(element, value) {
+  value = String(value);
   if (shown.get(element) !== value) {
     shown.set(element, value);
     element.textContent = value;
@@ -40,39 +40,31 @@ const ctx = canvas.getContext("2d");
 const ui = {
   playScore: $("#play-score"),
   playBest: $("#play-best"),
-  playGhost: $("#play-ghost"),
+  ghostToggle: $("#ghost-toggle"),
   ghostNote: $("#ghost-note"),
-  ghostButtons: [...document.querySelectorAll("#ghost-toggle button")],
   gen: $("#evo-gen"),
   alive: $("#evo-alive"),
-  species: $("#evo-species"),
   score: $("#evo-score"),
   record: $("#evo-record"),
-  netMeta: $("#net-meta"),
-  speciesMeta: $("#species-meta"),
   network: $("#network"),
   history: $("#history"),
-  speciesBar: $("#species"),
-  readout: $("#readout"),
   pause: $("#pause"),
   reset: $("#reset"),
-  statusLeft: $("#status-left"),
-  statusRight: $("#status-right"),
 };
 
 let mode = "play";
 
-/* ---------------------------------------------------------------- play */
+// --- play ---------------------------------------------------------------
 
 const play = {
   world: null,
-  state: "ready", // ready -> running -> over
+  state: "ready", // ready, running, over
   queuedFlap: false,
   diedAt: 0,
   flash: 0,
   best: Number(store.get("best", 0)) || 0,
   newBest: false,
-  ghostOn: Boolean(store.get("ghost", true)),
+  ghostOn: Boolean(store.get("ghost", false)),
   champion: store.get("champion", null),
   ghostNet: null,
   ghostInputs: new Float64Array(4),
@@ -81,13 +73,9 @@ const play = {
 };
 play.ghostNet = championNetwork(play.champion);
 
-function ghostActive() {
-  return play.ghostOn && play.ghostNet !== null;
-}
-
 function resetPlay() {
-  const seed = (Math.random() * 2 ** 32) >>> 0;
-  play.world = new World(seed, ghostActive() ? 2 : 1);
+  const ghost = play.ghostOn && play.ghostNet !== null;
+  play.world = new World((Math.random() * 2 ** 32) >>> 0, ghost ? 2 : 1);
   play.state = "ready";
   play.queuedFlap = false;
   play.acc = 0;
@@ -95,9 +83,8 @@ function resetPlay() {
 }
 
 function press() {
-  if (mode !== "play") return;
   if (play.state === "over") {
-    if (performance.now() - play.diedAt < 450) return; // swallow the panic taps
+    if (performance.now() - play.diedAt < 450) return; // ignore panic taps right after a crash
     resetPlay();
   }
   if (play.state === "ready") {
@@ -116,12 +103,13 @@ function stepPlay() {
     play.flaps[1] = play.ghostNet.activate(play.ghostInputs) > 0.5 ? 1 : 0;
   }
   world.step(play.flaps);
-  if (!world.birds[0].alive) {
+  const you = world.birds[0];
+  if (!you.alive) {
     play.state = "over";
     play.diedAt = performance.now();
     play.flash = 1;
-    if (world.birds[0].score > play.best) {
-      play.best = world.birds[0].score;
+    if (you.score > play.best) {
+      play.best = you.score;
       play.newBest = true;
       store.set("best", play.best);
     }
@@ -139,7 +127,7 @@ function framePlay(dt, now) {
     }
     alpha = play.state === "running" ? play.acc / DT : 1;
   } else if (play.state === "ready") {
-    // Idle hover until the first flap. Not part of the simulation.
+    // Gentle bob while waiting. Not part of the simulation.
     const y = CONFIG.height / 2 + Math.sin(now / 260) * 5;
     for (const bird of world.birds) {
       bird.prevY = bird.y = y;
@@ -150,51 +138,39 @@ function framePlay(dt, now) {
 
   const you = world.birds[0];
   const ghost = world.birds[1];
-  const birds = [];
-  if (ghost) birds.push({ index: 1, style: "ghost" });
+  const birds = ghost ? [{ index: 1, style: "ghost" }] : [];
   birds.push({ index: 0, style: "player", showDead: true });
 
   let message = null;
-  if (play.state === "ready") {
-    message = { title: "READY", lines: ghost ? ["GHOST: DASHED SQUARE", "SPACE · ↑ · TAP TO FLAP"] : ["SPACE · ↑ · TAP TO FLAP"] };
-  } else if (play.state === "over") {
-    const lines = [`SCORE ${pad(you.score)}   BEST ${pad(play.best)}${play.newBest ? "  NEW" : ""}`];
-    if (ghost) lines.push(`GHOST ${pad(ghost.score)}${ghost.alive ? " AND STILL FLYING" : ""}`);
-    lines.push("SPACE · TAP TO RETRY");
-    message = { title: "GAME OVER", lines };
+  if (play.state === "ready") message = ["Press space or tap to start"];
+  else if (play.state === "over") {
+    let result = play.newBest ? `New best: ${you.score}` : `You scored ${you.score}`;
+    if (ghost) result += `, the ghost ${ghost.alive ? "is still going" : `scored ${ghost.score}`}`;
+    message = [result, "Tap to try again"];
   }
 
   fitCanvas(canvas);
-  drawWorld(ctx, world, alpha, { birds, score: you.score, flash: play.flash, message });
-
-  text(ui.playScore, pad(you.score));
-  text(ui.playBest, pad(play.best));
-  text(ui.playGhost, ghost ? pad(ghost.score) : "--");
-  ui.statusLeft.textContent = `COURSE ${world.seed.toString(16).toUpperCase().padStart(8, "0")} · FIXED STEP 60 HZ`;
-  ui.statusRight.textContent = `${Math.round(fps)} FPS`;
+  drawWorld(ctx, world, alpha, { birds, score: play.state === "ready" ? undefined : you.score, flash: play.flash, message });
+  text(ui.playScore, you.score);
+  text(ui.playBest, play.best);
 }
 
-function refreshGhostUi() {
+function refreshGhost() {
   const has = play.ghostNet !== null;
-  ui.ghostButtons.forEach((button) => {
-    button.disabled = !has;
-    button.setAttribute("aria-pressed", String(has && (button.dataset.value === "on") === play.ghostOn));
-  });
+  ui.ghostToggle.disabled = !has;
+  ui.ghostToggle.checked = has && play.ghostOn;
   ui.ghostNote.textContent = has
-    ? `Champion from generation ${play.champion.generation}, which scored ${play.champion.score} on its course. It sees the same four sensor values the trainer uses.`
-    : "No champion yet. Run EVOLVE to breed one.";
+    ? `From generation ${play.champion.generation + 1}. It scored ${play.champion.score}.`
+    : "Run Evolve first to breed one.";
 }
 
-ui.ghostButtons.forEach((button) =>
-  button.addEventListener("click", () => {
-    play.ghostOn = button.dataset.value === "on";
-    store.set("ghost", play.ghostOn);
-    refreshGhostUi();
-    if (play.state !== "running") resetPlay();
-  }),
-);
+ui.ghostToggle.addEventListener("change", () => {
+  play.ghostOn = ui.ghostToggle.checked;
+  store.set("ghost", play.ghostOn);
+  if (play.state !== "running") resetPlay();
+});
 
-/* -------------------------------------------------------------- evolve */
+// --- evolve -------------------------------------------------------------
 
 const settings = {
   speed: "4",
@@ -211,15 +187,12 @@ const evo = {
   acc: 0,
   layoutGenome: null,
   layout: null,
-  seed: 1,
   birds: [],
-  stepsWindow: { at: 0, steps: 0, rate: 0 },
 };
 
 function createTrainer() {
-  evo.seed = (Math.random() * 0xffff) >>> 0 || 1;
   evo.trainer = new Trainer({
-    seed: evo.seed,
+    seed: (Math.random() * 0xffff) >>> 0 || 1,
     populationSize: Number(settings.populationSize),
     mutation: settings.mutation,
     species: settings.species,
@@ -229,35 +202,22 @@ function createTrainer() {
   evo.trainer.onGeneration(onGeneration);
   evo.acc = 0;
   evo.layoutGenome = null;
-  evo.stepsWindow = { at: performance.now(), steps: 0, rate: 0 };
-  drawGenerationCharts();
+  drawHistory(ui.history, evo.trainer.history);
 }
 
 function onGeneration(_entry, trainer) {
   const champion = trainer.champion;
-  const stored = play.champion;
-  if (champion && (!stored || champion.score >= stored.score)) {
+  if (champion && (!play.champion || champion.score >= play.champion.score)) {
     play.champion = champion;
     play.ghostNet = championNetwork(champion);
     store.set("champion", champion);
-    refreshGhostUi();
+    refreshGhost();
   }
-  drawGenerationCharts();
-}
-
-function drawGenerationCharts() {
-  const trainer = evo.trainer;
-  if (!trainer) return;
-  drawHistory(ui.history, trainer.history, MAX_SCORE);
-  const leader = trainer.leader.genome;
-  drawSpecies(ui.speciesBar, trainer.population.species, leader.speciesId);
-  const sizes = trainer.population.species.map((s) => s.members.length).sort((a, b) => b - a);
-  text(ui.speciesMeta, `THRESHOLD ${trainer.population.threshold.toFixed(2)} · LARGEST ${sizes[0]}`);
+  drawHistory(ui.history, trainer.history);
 }
 
 function frameEvolve(dt) {
   const trainer = evo.trainer;
-  const before = trainer.steps;
   if (!evo.paused) {
     if (settings.speed === "max") {
       const end = performance.now() + 12;
@@ -277,15 +237,6 @@ function frameEvolve(dt) {
   }
   const alpha = settings.speed === "max" || evo.paused ? 1 : Math.min(1, evo.acc / DT);
 
-  const now = performance.now();
-  const meter = evo.stepsWindow;
-  meter.steps += trainer.steps - before;
-  if (now - meter.at > 500) {
-    meter.rate = (meter.steps * 1000) / (now - meter.at);
-    meter.at = now;
-    meter.steps = 0;
-  }
-
   const world = trainer.world;
   const leaderIndex = trainer.leaderIndex;
   const birds = evo.birds;
@@ -298,80 +249,41 @@ function frameEvolve(dt) {
   fitCanvas(canvas);
   drawWorld(ctx, world, alpha, {
     birds,
-    sensors: leaderIndex,
+    follow: leaderIndex,
     score: world.score,
-    message: evo.paused ? { title: "PAUSED", lines: ["SPACE · CLICK TO RESUME"] } : null,
+    message: evo.paused ? ["Paused"] : null,
   });
 
   const leader = trainer.leader;
   if (leader.genome !== evo.layoutGenome) {
     evo.layoutGenome = leader.genome;
     evo.layout = layoutNetwork(leader.genome);
-    drawSpecies(ui.speciesBar, trainer.population.species, leader.genome.speciesId);
   }
-  const flapping = leader.output > 0.5;
-  drawNetwork(ui.network, evo.layout, leader.network, INPUT_LABELS, flapping);
+  drawNetwork(ui.network, evo.layout, leader.network, INPUT_LABELS, leader.output > 0.5);
 
-  text(ui.gen, pad(trainer.generation, 3));
-  text(ui.alive, `${world.aliveCount}/${world.birds.length}`);
-  text(ui.species, String(trainer.population.species.length));
-  text(ui.score, pad(world.score));
-  text(ui.record, pad(trainer.record));
-  text(ui.netMeta, `#${leader.genome.id} · ${leader.genome.hiddenCount} HIDDEN · ${leader.genome.enabledCount} LINKS`);
-  updateReadout(leader.inputs, leader.output);
-
-  const speed = settings.speed === "max" ? "MAX" : `${settings.speed}×`;
-  ui.statusLeft.textContent = `SEED ${pad(evo.seed, 5)} · COURSE ${trainer.courseSeed().toString(16).toUpperCase().padStart(8, "0")} · ${speed}`;
-  ui.statusRight.textContent = `${Math.round(meter.rate).toLocaleString("en-US")} STEPS/S · ${Math.round(fps)} FPS`;
-}
-
-// Five small cells: each sensor value with a bar from zero, then the output
-// against the 0.5 flap threshold.
-const readoutCells = [...INPUT_LABELS, "FLAP"].map((label, i) => {
-  const cell = document.createElement("div");
-  cell.className = i === INPUT_LABELS.length ? "sig out" : "sig";
-  cell.innerHTML = `<span>${label}</span><b>+0.00</b><i></i>`;
-  ui.readout.append(cell);
-  return { cell, value: cell.querySelector("b"), bar: cell.querySelector("i") };
-});
-let readoutAt = 0;
-
-function updateReadout(inputs, output) {
-  const now = performance.now();
-  if (now - readoutAt < 60) return;
-  readoutAt = now;
-  inputs.forEach((value, i) => {
-    const { value: label, bar } = readoutCells[i];
-    text(label, `${value >= 0 ? "+" : "−"}${Math.abs(value).toFixed(2)}`);
-    const v = Math.max(-1, Math.min(1, value));
-    bar.style.setProperty("--l", `${50 + Math.min(0, v) * 50}%`);
-    bar.style.setProperty("--w", `${Math.abs(v) * 50}%`);
-  });
-  const out = readoutCells[INPUT_LABELS.length];
-  text(out.value, output.toFixed(2));
-  out.bar.style.setProperty("--l", "0%");
-  out.bar.style.setProperty("--w", `${output * 100}%`);
-  out.cell.classList.toggle("on", output > 0.5);
+  text(ui.gen, trainer.generation + 1);
+  text(ui.alive, `${world.aliveCount} of ${world.birds.length}`);
+  text(ui.score, world.score);
+  text(ui.record, trainer.record);
 }
 
 function setPaused(paused) {
   evo.paused = paused;
   evo.acc = 0;
-  ui.pause.textContent = paused ? "RESUME" : "PAUSE";
-  ui.pause.setAttribute("aria-pressed", String(paused));
+  ui.pause.textContent = paused ? "Resume" : "Pause";
 }
 
 function applySetting(name, value) {
   settings[name] = value;
   store.set("settings", settings);
-  syncSettingButtons();
+  syncOptions();
   if (!evo.trainer) return;
   if (name === "populationSize") createTrainer();
-  else if (name !== "speed") evo.trainer.tune({ [name]: value });
-  if (name === "speed") evo.acc = 0;
+  else if (name === "speed") evo.acc = 0;
+  else evo.trainer.tune({ [name]: value });
 }
 
-function syncSettingButtons() {
+function syncOptions() {
   document.querySelectorAll("[data-setting]").forEach((group) => {
     group.querySelectorAll("button").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.value === settings[group.dataset.setting]));
@@ -391,26 +303,23 @@ ui.reset.addEventListener("click", () => {
   setPaused(false);
 });
 
-/* ---------------------------------------------------------------- shell */
+// --- shell --------------------------------------------------------------
 
 function setMode(next) {
   if (next === mode) return;
   mode = next;
-  document.body.dataset.mode = mode;
   document.querySelectorAll(".tabs button").forEach((button) => {
     button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
   });
   document.querySelectorAll("[data-pane]").forEach((pane) => {
     pane.hidden = pane.dataset.pane !== mode;
   });
-  ui.statusRight.textContent = "";
   if (mode === "evolve") {
     if (!evo.trainer) createTrainer();
     evo.acc = 0;
-    requestAnimationFrame(drawGenerationCharts);
-  } else {
-    // Pick up a champion bred since the last round.
-    if (play.state !== "running") resetPlay();
+    requestAnimationFrame(() => drawHistory(ui.history, evo.trainer.history));
+  } else if (play.state !== "running") {
+    resetPlay(); // picks up a champion bred since the last round
   }
   last = performance.now();
   store.set("mode", mode);
@@ -427,12 +336,13 @@ canvas.addEventListener("pointerdown", (event) => {
   else setPaused(!evo.paused);
 });
 
+// Space, up and W flap in play mode. In evolve mode Space pauses, 1-4 set the
+// speed and R restarts.
 const FLAP_KEYS = new Set(["Space", "ArrowUp", "KeyW"]);
 window.addEventListener("keydown", (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey) return;
   if (FLAP_KEYS.has(event.code)) {
-    // Stops Space from also clicking whichever button has focus, and from
-    // scrolling the page.
+    // Keeps Space from also clicking a focused button or scrolling the page.
     event.preventDefault();
     if (event.repeat) return;
     if (mode === "play") press();
@@ -449,25 +359,22 @@ window.addEventListener("keyup", (event) => {
 });
 
 new ResizeObserver(() => {
-  if (mode === "evolve") drawGenerationCharts();
+  if (evo.trainer) drawHistory(ui.history, evo.trainer.history);
 }).observe(ui.history);
 
 let last = performance.now();
-let fps = 60;
 function frame(now) {
-  // Clamp long gaps (a background tab, a debugger pause) so we never try to
-  // catch up on minutes of simulation in one frame.
+  // Cap long gaps (a background tab, a debugger pause) so we never try to
+  // catch up on minutes of simulation in one go.
   const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
   last = now;
-  if (dt > 0) fps += (1 / dt - fps) * 0.05;
   if (mode === "play") framePlay(dt, now);
   else frameEvolve(dt);
   requestAnimationFrame(frame);
 }
 
 resetPlay();
-refreshGhostUi();
-syncSettingButtons();
+refreshGhost();
+syncOptions();
 if (store.get("mode", "play") === "evolve") setMode("evolve");
-if (document.fonts?.ready) document.fonts.ready.then(drawGenerationCharts);
 requestAnimationFrame(frame);
